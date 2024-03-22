@@ -96,19 +96,20 @@ Rather than encouraging users to build progressively more complex (and fragile) 
 This conversion process is flexible and direct, and involves ordinary synchronous Rust code. Here's the heart of the `Manifest` trait:
 
 ```rust
-trait Manifest {
+trait Manifest: Sized {
     type Item;
-    type Err: Error = ();
-    type RawManifest = Self;
-    type RawItem = Item;
+    type Err: Error;
+    type RawManifest;
+    type RawItem;
 
-    fn from_raw_manifest(raw_manifest: Self::RawManifest, _world: &mut World) -> Result<Self, Err> {
-        Ok(raw_manifest)
-    }
+    fn from_raw_manifest(
+        raw_manifest: Self::RawManifest,
+        _world: &mut World,
+    ) -> Result<Self, Self::Err>;
 }
 ```
 
-As you can see, if you don't require this intermediate step, you can simply leave it out! The associated types and function defaults will result in no added work or complexity.
+If you don't require this intermediate step, you can simply leave it out! Set `Err = ()`, `RawManifest=Self` and `RawItem=Item` to avoid added work or complexity.
 
 If you've ever written a `TryFrom` impl in Rust before, this should be very familiar to you.
 Attempt to convert the items in the collection, one at a time, returning errors using the `?` operator as needed.
