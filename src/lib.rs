@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
 
-mod asset_state;
-mod identifier;
-mod manifest;
-mod plugin;
+pub mod asset_state;
+pub mod identifier;
+pub mod manifest;
+pub mod plugin;
