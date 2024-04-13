@@ -1,10 +1,12 @@
+use std::any::{type_name, TypeId};
 use std::path::PathBuf;
 
-use bevy::app::{App, Plugin, Update};
-use bevy::asset::{AssetLoadFailedEvent, AssetServer, LoadState, UntypedHandle};
+use bevy::app::{App, Plugin, PreUpdate, Update};
+use bevy::asset::{AssetLoadFailedEvent, AssetServer, Assets, LoadState, UntypedHandle};
 use bevy::ecs::prelude::*;
-use bevy::log::{error, info};
-use bevy::utils::{HashMap, HashSet};
+use bevy::ecs::system::SystemState;
+use bevy::log::error;
+use bevy::utils::HashMap;
 
 use crate::asset_state::AssetLoadingState;
 use crate::manifest::Manifest;
@@ -17,6 +19,9 @@ use crate::manifest::Manifest;
 /// Note that manifests must be added to the app manually, using the [`app.register_manifest`](crate::AppExt::register_manifest) method.
 /// This plugin **must** be added before manifests are registered.
 ///
+/// While [`register_manifest`](crate::AppExt::register_manifest) must be called for each manifest type you wish to use,
+/// this plugin should only be added a single time.
+///
 /// This plugin is intenionally optional: if you have more complex asset loading requirements, take a look at the systems in this plugin and either add or reimplement them as needed.
 pub struct ManifestPlugin<S: States> {
     _phantom: std::marker::PhantomData<S>,
@@ -25,12 +30,10 @@ pub struct ManifestPlugin<S: States> {
 impl<S: AssetLoadingState> Plugin for ManifestPlugin<S> {
     fn build(&self, app: &mut App) {
         app.insert_state(S::LOADING)
-            .init_resource::<AssetTracker>()
+            .init_resource::<RawManifestTracker>()
             .add_systems(
                 Update,
-                (start_loading_assets, check_if_assets_have_loaded::<S>)
-                    .chain()
-                    .run_if(in_state(S::LOADING)),
+                check_if_assets_have_loaded::<S>.run_if(in_state(S::LOADING)),
             );
     }
 }
@@ -40,67 +43,88 @@ pub trait AppExt {
     /// Registers a manifest with the app, preparing it for loading and parsing.
     ///
     /// The final manifest type must implement [`Manifest`], while the raw manifest type must implement [`Asset`](bevy::asset::Asset).
+    /// This must be called for each type of manifest you wish to load.
     fn register_manifest<M: Manifest>(&mut self, path: PathBuf);
 }
 
 impl AppExt for App {
     fn register_manifest<M: Manifest>(&mut self, path: PathBuf) {
-        let mut asset_tracker = self.world.resource_mut::<AssetTracker>();
-        asset_tracker.register(path);
+        self.world
+            .resource_scope(|world, mut asset_server: Mut<AssetServer>| {
+                let mut asset_tracker = world.resource_mut::<RawManifestTracker>();
+                asset_tracker.register::<M>(path, asset_server.as_mut());
+            });
+
         self.add_systems(
             Update,
             report_failed_raw_manifest_loading::<M>
                 .run_if(on_event::<AssetLoadFailedEvent<M::RawManifest>>()),
-        );
+        )
+        .add_systems(PreUpdate, process_manifest::<M>);
     }
 }
 
-/// Keeps track of the assets that need to be loaded, and their loading progress.
-///
-/// You can add your own assets to this tracker using [`AssetTracker::register`],
-/// which can be useful to ensure that the [`AssetLoadingState`] state declared in [`ManifestPlugin`]
-/// only advances when all needed assets have been loaded.
+/// Keeps track of the raw manifests that need to be loaded, and their loading progress.
 #[derive(Resource, Debug, Default)]
-pub struct AssetTracker {
-    assets_to_load: HashSet<PathBuf>,
-    initialized_assets: HashMap<PathBuf, UntypedHandle>,
-    asset_progress: HashMap<PathBuf, LoadState>,
+pub struct RawManifestTracker {
+    raw_manifests: HashMap<TypeId, RawManifestStatus>,
 }
 
-impl AssetTracker {
-    /// Registers an asset to be loaded.
+/// Information about the loading status of a raw manifest.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawManifestStatus {
+    /// The path to the manifest file.
+    pub path: PathBuf,
+    /// A strong handle to the raw manifest.
+    pub handle: UntypedHandle,
+    /// The computed loading state of the raw manifest.
+    pub load_state: LoadState,
+}
+
+impl RawManifestTracker {
+    /// Registers a manifest to be loaded.
     ///
     /// This must be done before [`AssetLoadingState::LOADING`] is complete.
-    pub fn register(&mut self, path: PathBuf) {
-        self.assets_to_load.insert(path);
+    pub fn register<M: Manifest>(&mut self, path: PathBuf, asset_server: &mut AssetServer) {
+        let handle: UntypedHandle = asset_server.load::<M::RawManifest>(path.clone()).untyped();
+        let type_id = std::any::TypeId::of::<M>();
+
+        self.raw_manifests.insert(
+            type_id,
+            RawManifestStatus {
+                path: path.clone(),
+                handle,
+                load_state: LoadState::Loading,
+            },
+        );
     }
 
-    /// Returns a reference to the set of assets that need to be loaded.
-    pub fn assets_to_load(&self) -> &HashSet<PathBuf> {
-        &self.assets_to_load
+    /// Returns the load state and other metadata for the given manifest.
+    pub fn status<M: Manifest>(&self) -> Option<&RawManifestStatus> {
+        self.raw_manifests.get(&std::any::TypeId::of::<M>())
     }
 
-    /// Returns a reference to the assets that have been initialized but not yet loaded.
-    pub fn initialized_assets(&self) -> &HashMap<PathBuf, UntypedHandle> {
-        &self.initialized_assets
+    /// Iterates over all registered raw manifests.
+    pub fn iter(&self) -> impl Iterator<Item = (&TypeId, &RawManifestStatus)> {
+        self.raw_manifests.iter()
     }
 
-    /// Returns a reference to the recorded loading progress of assets.
-    pub fn asset_progress(&self) -> &HashMap<PathBuf, LoadState> {
-        &self.asset_progress
+    /// Updates the load state of all registered raw manifests.
+    pub fn update_load_states(&mut self, asset_server: &AssetServer) {
+        for status in self.raw_manifests.values_mut() {
+            status.load_state = asset_server
+                .get_load_state(status.handle.clone_weak())
+                .unwrap_or(LoadState::Failed);
+        }
     }
-}
 
-/// Queues up assets to be loaded asynchronously.
-pub fn start_loading_assets(
-    mut asset_tracker: ResMut<AssetTracker>,
-    asset_server: Res<AssetServer>,
-) {
-    let assets_to_load = std::mem::take(&mut asset_tracker.assets_to_load);
+    /// Returns true if all registered raw manifests have loaded.
+    pub fn all_manifests_loaded(&mut self, asset_server: &AssetServer) -> bool {
+        self.update_load_states(asset_server);
 
-    for path in assets_to_load {
-        let handle = asset_server.load_untyped(path.clone()).untyped();
-        asset_tracker.initialized_assets.insert(path, handle);
+        self.raw_manifests
+            .values()
+            .all(|status| status.load_state == LoadState::Loaded)
     }
 }
 
@@ -108,45 +132,10 @@ pub fn start_loading_assets(
 /// and progresses to the next state if they have.
 pub fn check_if_assets_have_loaded<S: AssetLoadingState>(
     asset_server: Res<AssetServer>,
-    mut asset_tracker: ResMut<AssetTracker>,
+    mut raw_manifest_tracker: ResMut<RawManifestTracker>,
     mut next_state: ResMut<NextState<S>>,
 ) {
-    let mut assets_loaded = true;
-
-    for (path, handle) in &asset_tracker.initialized_assets.clone() {
-        let load_state = asset_server
-            .get_load_state(handle)
-            .unwrap_or(LoadState::Failed);
-
-        match load_state {
-            LoadState::Loaded => {
-                asset_tracker.assets_to_load.remove(path);
-                info!("Loaded asset: {:?}", path);
-            }
-            LoadState::Failed => {
-                error!("Failed to load asset: {:?}", path);
-            }
-            _ => {}
-        }
-
-        if load_state == LoadState::Failed {
-            error!("Failed to load asset: {:?}", path);
-            continue;
-        }
-
-        asset_tracker
-            .asset_progress
-            .insert(path.clone(), load_state);
-
-        if load_state != LoadState::Loaded {
-            assets_loaded = false;
-        }
-    }
-
-    if assets_loaded {
-        asset_tracker.initialized_assets.clear();
-        asset_tracker.assets_to_load.clear();
-
+    if raw_manifest_tracker.all_manifests_loaded(&asset_server.as_ref()) {
         next_state.set(S::PROCESSING);
     }
 }
@@ -170,17 +159,37 @@ pub fn report_failed_raw_manifest_loading<M: Manifest>(
 /// A system which processes a raw manifest into a completed [`Manifest`],
 /// and then stores the manifest as a [`Resource`] in the [`World`].
 pub fn process_manifest<M: Manifest>(
-    raw_manifest: &M::RawManifest,
     world: &mut World,
-) -> Result<(), M::ConversionError> {
-    match M::from_raw_manifest(&raw_manifest) {
+    system_state: &mut SystemState<(Res<RawManifestTracker>, Res<Assets<M::RawManifest>>)>,
+) {
+    let (raw_manifest_tracker, assets) = system_state.get(world);
+    let Some(status) = raw_manifest_tracker.status::<M>() else {
+        error!(
+            "No raw manifest status found for manifest type {}",
+            type_name::<M>()
+        );
+        return;
+    };
+    let typed_handle = status.handle.clone_weak().typed::<M::RawManifest>();
+    let maybe_raw_manifest = assets.get(typed_handle).map(Clone::clone);
+
+    let raw_manifest = match maybe_raw_manifest {
+        Some(raw_manifest) => raw_manifest,
+        None => {
+            error!(
+                "Failed to get raw manifest for manifest type {}",
+                type_name::<M>()
+            );
+            return;
+        }
+    };
+
+    match M::from_raw_manifest(&raw_manifest, world) {
         Ok(manifest) => {
             world.insert_resource(manifest);
-            Ok(())
         }
         Err(err) => {
             error!("Failed to process manifest: {:?}", err);
-            Err(err)
         }
     }
 }
