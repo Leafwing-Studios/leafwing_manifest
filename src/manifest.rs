@@ -32,11 +32,6 @@ pub trait Manifest: Sized + Resource {
     /// The raw data type that is stored in the manifest.
     type RawItem;
 
-    /// Gets the unique identifier of an item by its name.
-    ///
-    /// Returns [`None`] if no item with the given name is found.
-    fn id_of(&self, name: &str) -> Option<Id<Self::Item>>;
-
     /// Converts a raw manifest into the corresponding manifest.
     ///
     /// This is an inherently fallible operation, as the raw data may be malformed or invalid.
@@ -78,6 +73,30 @@ pub trait Manifest: Sized + Resource {
         id: &Id<Self::Item>,
     ) -> Result<Id<Self::Item>, ManifestModificationError<Self>>;
 
+    /// Gets an item from the manifest by its unique identifier.
+    ///
+    /// Returns [`None`] if no item with the given ID is found.
+    fn get(&self, id: &Id<Self::Item>) -> Option<&Self::Item>;
+
+    /// Gets a mutable reference to an item from the manifest by its unique identifier.
+    ///
+    /// Returns [`None`] if no item with the given ID is found.
+    fn get_mut(&mut self, id: &Id<Self::Item>) -> Option<&mut Self::Item>;
+}
+
+/// A trait for manifests that have named items.
+///
+/// Naming items can be useful for quick-prototyping, or for hybrid code and data-driven workflows.
+///
+/// However, named items can be less efficient than using [`Id`]s, as they require string lookups and an additional string-based mapping.
+/// As a result, the methods of this trait have been split from the main [`Manifest`] trait,
+/// and should be used with deliberation.
+pub trait NamedManifest: Manifest {
+    /// Gets the unique identifier of an item by its name.
+    ///
+    /// Returns [`None`] if no item with the given name is found.
+    fn id_of(&self, name: &str) -> Option<Id<Self::Item>>;
+
     /// Removes an item from the manifest by name.
     ///
     /// The item removed is returned, if it was found.
@@ -90,22 +109,12 @@ pub trait Manifest: Sized + Resource {
             .and_then(|id| self.remove(&id))
     }
 
-    /// Gets an item from the manifest by its unique identifier.
-    ///
-    /// Returns [`None`] if no item with the given ID is found.
-    fn get(&self, id: &Id<Self::Item>) -> Option<&Self::Item>;
-
     /// Gets an item from the manifest by its name.
     ///
     /// Returns [`None`] if no item with the given name is found.
     fn get_by_name(&self, name: &str) -> Option<&Self::Item> {
         self.id_of(name).and_then(|id| self.get(&id))
     }
-
-    /// Gets a mutable reference to an item from the manifest by its unique identifier.
-    ///
-    /// Returns [`None`] if no item with the given ID is found.
-    fn get_mut(&mut self, id: &Id<Self::Item>) -> Option<&mut Self::Item>;
 
     /// Gets a mutable reference to an item from the manifest by its name.
     ///
