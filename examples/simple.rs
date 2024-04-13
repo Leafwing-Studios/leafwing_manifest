@@ -1,3 +1,9 @@
+//! This example demonstrates the simplest use of the `leafwing_manifest` crate.
+//!
+//! In this example, the manifest and raw manifest are the same type, and the data is read directly from the serialized format on disk into the [`ItemManifest`] resource.
+//! This pattern is great for simple prototyping and small projects, but can be quickly outgrown as the project's needs scale.
+//! See the other examples for more advanced use cases!
+
 use bevy::{prelude::*, utils::HashMap};
 use leafwing_manifest::{
     asset_state::SimpleAssetState,
