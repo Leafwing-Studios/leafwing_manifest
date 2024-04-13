@@ -23,21 +23,29 @@ use crate::identifier::Id;
 /// However, mutable accessors are provided, allowing for the runtime addition of new game objects,
 /// as might be used for things like user-generated content or modding.
 pub trait Manifest: Sized + Resource {
+    /// The raw data type that is loaded from disk.
+    ///
+    /// This type may be `Self`, if no further processing is required.
+    type RawManifest: Asset;
+
+    /// The raw data type that is stored in the manifest.
+    type RawItem;
+
     /// The type of the game object stored in the manifest.
     ///
     /// These are commonly [`Bundle`](bevy::ecs::bundle::Bundle) types, allowing you to directly spawn them into the [`World`](bevy::ecs::world::World).
     /// If you wish to store [`Handles`](bevy::asset::Handle) to other assets (such as textures, sprites or sounds),
     /// starting the asset loading process for those assets in [`from_raw_manifest`](Manifest::from_raw_manifest) works very well!
-    type Item;
+    type Item: TryFrom<Self::RawItem, Error = Self::ConversionError>;
+
     /// The error type that can occur when converting raw manifests into a manifest.
+    ///
+    /// When implementing this trait for a manifest without any conversion steps,
+    /// this type can be set to [`Infallible`](std::convert::Infallible).
     ///
     /// If you want to reprocess the manifest,
     /// consider returning the raw manifest in the error type.
     type ConversionError: Error;
-    /// The raw data type that is loaded from disk.
-    type RawManifest: Asset;
-    /// The raw data type that is stored in the manifest.
-    type RawItem;
 
     /// Converts a raw manifest into the corresponding manifest.
     ///
@@ -50,15 +58,13 @@ pub trait Manifest: Sized + Resource {
     /// This is useful for cross-referencing data between manifests.
     /// Use ordinary system ordering to ensure that the required manifests are loaded first:
     /// the system that calls this method is [`process_manifest::<M>`](crate::plugin::process_manifest), run in the [`PreUpdate`](bevy::prelude::PreUpdate) schedule.
+    ///
+    /// This method is commonly implemented using the [`TryFrom`] trait between [`Self::RawItem`](Manifest::RawItem) and [`Self::Item`](Manifest::Item).
+    /// By iterating over the items in the raw manifest, you can convert them into the final item type one at a time.
     fn from_raw_manifest(
         raw_manifest: Self::RawManifest,
         world: &mut World,
     ) -> Result<Self, Self::ConversionError>;
-
-    /// Converts a raw item into the corresponding item.
-    ///
-    /// This is an inherently fallible operation, as the raw data may be malformed or invalid.
-    fn convert_raw_item(raw_item: Self::RawItem) -> Result<Self::Item, Self::ConversionError>;
 
     /// Converts and then inserts a raw item into the manifest.
     ///
@@ -67,9 +73,12 @@ pub trait Manifest: Sized + Resource {
         &mut self,
         raw_item: Self::RawItem,
     ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
-        Self::convert_raw_item(raw_item)
-            .map_err(|e| ManifestModificationError::ConversionFailed(e))
-            .and_then(|item| self.insert(item))
+        let conversion_result = TryFrom::<Self::RawItem>::try_from(raw_item);
+
+        match conversion_result {
+            Ok(item) => self.insert(item),
+            Err(e) => Err(ManifestModificationError::ConversionFailed(e)),
+        }
     }
 
     /// Inserts a new item into the manifest.

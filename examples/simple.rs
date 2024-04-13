@@ -73,10 +73,6 @@ impl Manifest for ItemManifest {
     ) -> Result<Self, Self::ConversionError> {
         Ok(raw_manifest)
     }
-
-    fn convert_raw_item(raw_item: Self::RawItem) -> Result<Self::Item, Self::ConversionError> {
-        Ok(raw_item)
-    }
 }
 
 fn main() {
