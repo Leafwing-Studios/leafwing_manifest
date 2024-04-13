@@ -5,7 +5,7 @@ use bevy::app::{App, Plugin, PreUpdate, Update};
 use bevy::asset::{AssetLoadFailedEvent, AssetServer, Assets, LoadState, UntypedHandle};
 use bevy::ecs::prelude::*;
 use bevy::ecs::system::SystemState;
-use bevy::log::error;
+use bevy::log::error_once;
 use bevy::utils::HashMap;
 
 use crate::asset_state::AssetLoadingState;
@@ -60,7 +60,10 @@ impl AppExt for App {
             report_failed_raw_manifest_loading::<M>
                 .run_if(on_event::<AssetLoadFailedEvent<M::RawManifest>>()),
         )
-        .add_systems(PreUpdate, process_manifest::<M>);
+        .add_systems(
+            PreUpdate,
+            process_manifest::<M>.run_if(not(resource_exists::<M>)),
+        );
     }
 }
 
@@ -149,9 +152,10 @@ pub fn report_failed_raw_manifest_loading<M: Manifest>(
     mut events: EventReader<AssetLoadFailedEvent<M::RawManifest>>,
 ) {
     for event in events.read() {
-        error!(
+        error_once!(
             "Failed to load asset at {} due to {:?}",
-            event.path, event.error
+            event.path,
+            event.error
         );
     }
 }
@@ -164,7 +168,7 @@ pub fn process_manifest<M: Manifest>(
 ) {
     let (raw_manifest_tracker, assets) = system_state.get(world);
     let Some(status) = raw_manifest_tracker.status::<M>() else {
-        error!(
+        error_once!(
             "No raw manifest status found for manifest type {}",
             type_name::<M>()
         );
@@ -176,7 +180,7 @@ pub fn process_manifest<M: Manifest>(
     let raw_manifest = match maybe_raw_manifest {
         Some(raw_manifest) => raw_manifest,
         None => {
-            error!(
+            error_once!(
                 "Failed to get raw manifest for manifest type {}",
                 type_name::<M>()
             );
@@ -189,7 +193,7 @@ pub fn process_manifest<M: Manifest>(
             world.insert_resource(manifest);
         }
         Err(err) => {
-            error!("Failed to process manifest: {:?}", err);
+            error_once!("Failed to process manifest: {:?}", err);
         }
     }
 }
