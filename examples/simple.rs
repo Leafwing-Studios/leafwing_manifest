@@ -51,7 +51,7 @@ impl Manifest for ItemManifest {
         // Because we're relying on the name as a unique identifier,
         // we need to check for duplicates.
         if self.items.contains_key(&id) {
-            return Err(ManifestModificationError::DuplicateName(item.name.clone()));
+            Err(ManifestModificationError::DuplicateName(item.name.clone()))
         } else {
             self.items.insert(id, item);
             Ok(id)

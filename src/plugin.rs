@@ -141,7 +141,7 @@ pub fn check_if_assets_have_loaded<S: AssetLoadingState>(
     mut raw_manifest_tracker: ResMut<RawManifestTracker>,
     mut next_state: ResMut<NextState<S>>,
 ) {
-    if raw_manifest_tracker.all_manifests_loaded(&asset_server.as_ref()) {
+    if raw_manifest_tracker.all_manifests_loaded(asset_server.as_ref()) {
         next_state.set(S::PROCESSING);
     }
 }
