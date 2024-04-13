@@ -1,0 +1,22 @@
+(
+    items: {
+        (
+            value: 814380520,
+        ): (
+            name: "sword",
+            description: "A sharp sword",
+            value: 10,
+            weight: 2.0,
+            max_stack: 1,
+        ),
+        (
+            value: 113295724,
+        ): (
+            name: "shield",
+            description: "A sturdy shield",
+            value: 5,
+            weight: 5.0,
+            max_stack: 1,
+        ),
+    },
+)

@@ -5,11 +5,12 @@ use leafwing_manifest::{
     manifest::{Manifest, ManifestModificationError},
     plugin::{AppExt, ManifestPlugin},
 };
+use serde::{Deserialize, Serialize};
 
 /// The data for as single [`ItemType`].
 ///
 /// This is the data that is shared between all items of the same type.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[allow(dead_code)]
 struct Item {
     name: String,
@@ -20,7 +21,7 @@ struct Item {
 }
 
 /// A data-driven manifest, which contains all the data for all the items in the game.
-#[derive(Debug, Resource, Asset, TypePath)]
+#[derive(Debug, Resource, Asset, TypePath, Serialize, Deserialize, PartialEq)]
 struct ItemManifest {
     items: HashMap<Id<Item>, Item>,
 }
@@ -97,5 +98,54 @@ fn main() {
 fn list_available_items(item_manifest: Res<ItemManifest>) {
     for (id, item) in item_manifest.items.iter() {
         println!("{:?}: {:?}", id, item);
+    }
+}
+
+/// This module is used to generate the item manifest.
+///
+/// While manifests *can* be hand-authored, it's often more convenient to generate them using tooling of some kind.
+/// Serde's [`Serialize`] and [`Deserialize`] traits are a good fit for this purpose.
+/// `ron` is a straightforward human-readable format that plays well with Rust's type system, and is a good point to start.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generate_item_manifest() {
+        let mut items = HashMap::default();
+
+        items.insert(
+            Id::from_name("sword".into()),
+            Item {
+                name: "sword".into(),
+                description: "A sharp sword".into(),
+                value: 10,
+                weight: 2.0,
+                max_stack: 1,
+            },
+        );
+
+        items.insert(
+            Id::from_name("shield".into()),
+            Item {
+                name: "shield".into(),
+                description: "A sturdy shield".into(),
+                value: 5,
+                weight: 5.0,
+                max_stack: 1,
+            },
+        );
+
+        let item_manifest = ItemManifest { items };
+
+        let serialized = ron::ser::to_string_pretty(&item_manifest, Default::default()).unwrap();
+        println!("{}", serialized);
+
+        // Save the results, to ensure that our example has a valid manifest to read.
+        std::fs::write("assets/items.ron", &serialized).unwrap();
+
+        let deserialized: ItemManifest = ron::de::from_str(&serialized).unwrap();
+
+        assert_eq!(item_manifest, deserialized);
     }
 }
