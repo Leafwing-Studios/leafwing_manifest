@@ -30,7 +30,10 @@ pub trait Manifest: Sized + Resource {
     /// starting the asset loading process for those assets in [`from_raw_manifest`](Manifest::from_raw_manifest) works very well!
     type Item;
     /// The error type that can occur when converting raw manifests into a manifest.
-    type ConversionError: Clone + PartialEq + Error;
+    ///
+    /// If you want to reprocess the manifest,
+    /// consider returning the raw manifest in the error type.
+    type ConversionError: Error;
     /// The raw data type that is loaded from disk.
     type RawManifest: Asset;
     /// The raw data type that is stored in the manifest.
