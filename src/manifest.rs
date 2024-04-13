@@ -31,6 +31,10 @@ pub trait Manifest: Sized + Resource {
     /// The raw data type that is loaded from disk.
     ///
     /// This type may be `Self`, if no further processing is required.
+    ///
+    /// While the raw manifest *can* be stored on disk as a dictionary/map of items,
+    /// keyed by either their name or `Id`, it is generally more efficient (and easier to hand-author)
+    /// if it is instead stored as a simple flat list.
     type RawManifest: Asset;
 
     /// The raw data type that is stored in the manifest.
@@ -89,6 +93,11 @@ pub trait Manifest: Sized + Resource {
     /// Inserts a new item into the manifest.
     ///
     /// The item is given a unique identifier, which is returned.
+    ///
+    /// The [`Id`] typically used as a key here should be generated via the [`Id::from_name`] method,
+    /// which hashes the name (fetched from a field on the raw item) into a collision-resistant identifier.
+    ///
+    /// If a duplicate entry is found, you should return [`Err(ManifestModificationError::DuplicateName(name))`](ManifestModificationError::DuplicateName).
     fn insert(
         &mut self,
         item: Self::Item,
@@ -156,12 +165,18 @@ pub trait NamedManifest: Manifest {
 /// An error that can occur when modifying a manifest.
 #[derive(Debug, Clone, PartialEq, Error)]
 pub enum ManifestModificationError<M: Manifest> {
+    /// The name of the item is already in use.
     #[error("The name {} is already in use.", _0)]
     DuplicateName(String),
+    /// The raw item could not be converted.
+    ///
+    /// The error that occurred during the conversion is included.
     #[error("The raw item could not be converted.")]
     ConversionFailed(M::ConversionError),
-    #[error("The item with ID {} was not found.", _0)]
-    NotFound(u64),
+    /// The item with the given ID was not found.
+    #[error("The item with ID {:?} was not found.", _0)]
+    NotFound(Id<M::Item>),
+    /// The item with the given name was not found.
     #[error("No item with the name {} was found.", _0)]
     NameNotFound(String),
 }
