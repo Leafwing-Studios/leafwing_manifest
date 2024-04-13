@@ -23,6 +23,7 @@ use crate::manifest::Manifest;
 /// this plugin should only be added a single time.
 ///
 /// This plugin is intenionally optional: if you have more complex asset loading requirements, take a look at the systems in this plugin and either add or reimplement them as needed.
+#[derive(Debug, Default)]
 pub struct ManifestPlugin<S: States> {
     _phantom: std::marker::PhantomData<S>,
 }
@@ -44,11 +45,11 @@ pub trait AppExt {
     ///
     /// The final manifest type must implement [`Manifest`], while the raw manifest type must implement [`Asset`](bevy::asset::Asset).
     /// This must be called for each type of manifest you wish to load.
-    fn register_manifest<M: Manifest>(&mut self, path: PathBuf);
+    fn register_manifest<M: Manifest>(&mut self, path: PathBuf) -> &mut Self;
 }
 
 impl AppExt for App {
-    fn register_manifest<M: Manifest>(&mut self, path: PathBuf) {
+    fn register_manifest<M: Manifest>(&mut self, path: PathBuf) -> &mut Self {
         self.world
             .resource_scope(|world, mut asset_server: Mut<AssetServer>| {
                 let mut asset_tracker = world.resource_mut::<RawManifestTracker>();
@@ -64,6 +65,8 @@ impl AppExt for App {
             PreUpdate,
             process_manifest::<M>.run_if(not(resource_exists::<M>)),
         );
+
+        self
     }
 }
 
