@@ -9,7 +9,7 @@ use leafwing_manifest::{
 /// The data for as single [`ItemType`].
 ///
 /// This is the data that is shared between all items of the same type.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[allow(dead_code)]
 struct Item {
     name: String,
@@ -20,8 +20,7 @@ struct Item {
 }
 
 /// A data-driven manifest, which contains all the data for all the items in the game.
-// FIXME: remove Clone requirement
-#[derive(Debug, Resource, Asset, TypePath, Clone)]
+#[derive(Debug, Resource, Asset, TypePath)]
 struct ItemManifest {
     items: HashMap<Id<Item>, Item>,
 }
@@ -69,14 +68,14 @@ impl Manifest for ItemManifest {
     // We're able to read the data directly from the serialized format,
     // so there's no need for any intermediate conversion.
     fn from_raw_manifest(
-        raw_manifest: &Self::RawManifest,
+        raw_manifest: Self::RawManifest,
         _world: &mut World,
     ) -> Result<Self, Self::ConversionError> {
-        Ok(raw_manifest.clone())
+        Ok(raw_manifest)
     }
 
-    fn convert_raw_item(raw_item: &Self::RawItem) -> Result<Self::Item, Self::ConversionError> {
-        Ok(raw_item.clone())
+    fn convert_raw_item(raw_item: Self::RawItem) -> Result<Self::Item, Self::ConversionError> {
+        Ok(raw_item)
     }
 }
 

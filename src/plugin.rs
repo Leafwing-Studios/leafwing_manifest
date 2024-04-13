@@ -165,11 +165,13 @@ pub fn report_failed_raw_manifest_loading<M: Manifest>(
 
 /// A system which processes a raw manifest into a completed [`Manifest`],
 /// and then stores the manifest as a [`Resource`] in the [`World`].
+///
+/// The raw manifest will be removed from the [`AssetServer`] as part of creation.
 pub fn process_manifest<M: Manifest>(
     world: &mut World,
-    system_state: &mut SystemState<(Res<RawManifestTracker>, Res<Assets<M::RawManifest>>)>,
+    system_state: &mut SystemState<(Res<RawManifestTracker>, ResMut<Assets<M::RawManifest>>)>,
 ) {
-    let (raw_manifest_tracker, assets) = system_state.get(world);
+    let (raw_manifest_tracker, mut assets) = system_state.get_mut(world);
     let Some(status) = raw_manifest_tracker.status::<M>() else {
         error_once!(
             "No raw manifest status found for manifest type {}",
@@ -178,7 +180,7 @@ pub fn process_manifest<M: Manifest>(
         return;
     };
     let typed_handle = status.handle.clone_weak().typed::<M::RawManifest>();
-    let maybe_raw_manifest = assets.get(typed_handle).map(Clone::clone);
+    let maybe_raw_manifest = assets.remove(typed_handle);
 
     let raw_manifest = match maybe_raw_manifest {
         Some(raw_manifest) => raw_manifest,
@@ -191,7 +193,7 @@ pub fn process_manifest<M: Manifest>(
         }
     };
 
-    match M::from_raw_manifest(&raw_manifest, world) {
+    match M::from_raw_manifest(raw_manifest, world) {
         Ok(manifest) => {
             world.insert_resource(manifest);
         }

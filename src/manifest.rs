@@ -32,7 +32,7 @@ pub trait Manifest: Sized + Resource {
     /// The error type that can occur when converting raw manifests into a manifest.
     type ConversionError: Clone + PartialEq + Error;
     /// The raw data type that is loaded from disk.
-    type RawManifest: Asset + Clone;
+    type RawManifest: Asset;
     /// The raw data type that is stored in the manifest.
     type RawItem;
 
@@ -48,21 +48,21 @@ pub trait Manifest: Sized + Resource {
     /// Use ordinary system ordering to ensure that the required manifests are loaded first:
     /// the system that calls this method is [`process_manifest::<M>`](crate::plugin::process_manifest), run in the [`PreUpdate`](bevy::prelude::PreUpdate) schedule.
     fn from_raw_manifest(
-        raw_manifest: &Self::RawManifest,
+        raw_manifest: Self::RawManifest,
         world: &mut World,
     ) -> Result<Self, Self::ConversionError>;
 
     /// Converts a raw item into the corresponding item.
     ///
     /// This is an inherently fallible operation, as the raw data may be malformed or invalid.
-    fn convert_raw_item(raw_item: &Self::RawItem) -> Result<Self::Item, Self::ConversionError>;
+    fn convert_raw_item(raw_item: Self::RawItem) -> Result<Self::Item, Self::ConversionError>;
 
     /// Converts and then inserts a raw item into the manifest.
     ///
     /// This is a convenience method that combines the conversion and insertion steps.
     fn insert_raw_item(
         &mut self,
-        raw_item: &Self::RawItem,
+        raw_item: Self::RawItem,
     ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
         Self::convert_raw_item(raw_item)
             .map_err(|e| ManifestModificationError::ConversionFailed(e))
