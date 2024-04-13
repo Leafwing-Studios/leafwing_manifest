@@ -170,10 +170,10 @@ pub fn report_failed_raw_manifest_loading<M: Manifest>(
 /// A system which processes a raw manifest into a completed [`Manifest`],
 /// and then stores the manifest as a [`Resource`] in the [`World`].
 pub fn process_manifest<M: Manifest>(
-    raw_manifest: M::RawManifest,
+    raw_manifest: &M::RawManifest,
     world: &mut World,
 ) -> Result<(), M::ConversionError> {
-    match M::from_raw_manifest(raw_manifest, world) {
+    match M::from_raw_manifest(&raw_manifest) {
         Ok(manifest) => {
             world.insert_resource(manifest);
             Ok(())

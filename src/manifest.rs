@@ -1,9 +1,6 @@
 use std::error::Error;
 
-use bevy::{
-    asset::Asset,
-    ecs::{system::Resource, world::World},
-};
+use bevy::{asset::Asset, ecs::system::Resource};
 use thiserror::Error;
 
 use crate::identifier::Id;
@@ -35,10 +32,7 @@ pub trait Manifest: Sized + Resource {
     /// Converts a raw manifest into the corresponding manifest.
     ///
     /// This is an inherently fallible operation, as the raw data may be malformed or invalid.
-    fn from_raw_manifest(
-        raw_manifest: &Self::RawManifest,
-        _world: &World,
-    ) -> Result<Self, Self::ConversionError>;
+    fn from_raw_manifest(raw_manifest: &Self::RawManifest) -> Result<Self, Self::ConversionError>;
 
     /// Converts a raw item into the corresponding item.
     ///
