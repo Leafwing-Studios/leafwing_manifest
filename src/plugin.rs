@@ -172,7 +172,7 @@ pub fn report_failed_raw_manifest_loading<M: Manifest>(
 pub fn process_manifest<M: Manifest>(
     raw_manifest: M::RawManifest,
     world: &mut World,
-) -> Result<(), M::Err> {
+) -> Result<(), M::ConversionError> {
     match M::from_raw_manifest(raw_manifest, world) {
         Ok(manifest) => {
             world.insert_resource(manifest);

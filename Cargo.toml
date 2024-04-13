@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 bevy = { version = "0.13", default-features = false, features = ["bevy_asset"] }
 serde = "1.0.195"
+thiserror = "1.0.58"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
