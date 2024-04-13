@@ -18,6 +18,11 @@ use crate::identifier::Id;
 /// With a manifest in hand, game objects are looked up by their unique [`Id`],
 /// returning an object of type [`Manifest::Item`].
 ///
+/// Types that implement [`Manifest`] are generally simple hashmap data structures, mapping `Id<Item>` to `Item`.
+/// However, if looking up objects by their name is required, the [`NamedManifest`] trait can be added,
+/// and strings are used as the key instead of `Id<Item>`.
+/// The `Id` can then be quickly generated, using the built-in [`Id::from_name`] stable hash method.
+///
 /// The elements of the manifest should generally be treated as immutable, as they are shared across the game,
 /// and represent the "canonical" version of the game objects.
 /// However, mutable accessors are provided, allowing for the runtime addition of new game objects,
