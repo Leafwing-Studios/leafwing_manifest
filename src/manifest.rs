@@ -1,8 +1,11 @@
 use std::error::Error;
 
-use bevy::{asset::Asset, ecs::world::World};
+use bevy::{
+    asset::Asset,
+    ecs::{system::Resource, world::World},
+};
 
-pub trait Manifest: Sized + 'static {
+pub trait Manifest: Sized + Resource {
     type Item;
     type Err: Error;
     type RawManifest: Asset;
@@ -10,6 +13,6 @@ pub trait Manifest: Sized + 'static {
 
     fn from_raw_manifest(
         raw_manifest: Self::RawManifest,
-        _world: &mut World,
+        _world: &World,
     ) -> Result<Self, Self::Err>;
 }
