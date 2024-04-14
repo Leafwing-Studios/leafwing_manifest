@@ -2,7 +2,7 @@ use std::any::{type_name, TypeId};
 use std::path::PathBuf;
 
 use bevy::app::{App, Plugin, PreUpdate, Update};
-use bevy::asset::{AssetLoadFailedEvent, AssetServer, Assets, LoadState, UntypedHandle};
+use bevy::asset::{AssetApp, AssetLoadFailedEvent, AssetServer, Assets, LoadState, UntypedHandle};
 use bevy::ecs::prelude::*;
 use bevy::ecs::system::SystemState;
 use bevy::log::error_once;
@@ -49,26 +49,30 @@ pub trait AppExt {
     ///
     /// The final manifest type must implement [`Manifest`], while the raw manifest type must implement [`Asset`](bevy::asset::Asset).
     /// This must be called for each type of manifest you wish to load.
-    fn register_manifest<M: Manifest>(&mut self, path: PathBuf) -> &mut Self;
+    fn register_manifest<M: Manifest>(&mut self, path: impl Into<PathBuf>) -> &mut Self;
 }
 
 impl AppExt for App {
-    fn register_manifest<M: Manifest>(&mut self, path: PathBuf) -> &mut Self {
+    /// Registers the manifest `M`.
+    ///
+    /// By default, the path root is the `assets` folder, just like all Bevy assets.
+    fn register_manifest<M: Manifest>(&mut self, path: impl Into<PathBuf>) -> &mut Self {
+        self.init_asset::<M::RawManifest>()
+            .add_systems(
+                Update,
+                report_failed_raw_manifest_loading::<M>
+                    .run_if(on_event::<AssetLoadFailedEvent<M::RawManifest>>()),
+            )
+            .add_systems(
+                PreUpdate,
+                process_manifest::<M>.run_if(not(resource_exists::<M>)),
+            );
+
         self.world
             .resource_scope(|world, mut asset_server: Mut<AssetServer>| {
-                let mut asset_tracker = world.resource_mut::<RawManifestTracker>();
-                asset_tracker.register::<M>(path, asset_server.as_mut());
+                let mut manifest_tracker = world.resource_mut::<RawManifestTracker>();
+                manifest_tracker.register::<M>(path, asset_server.as_mut());
             });
-
-        self.add_systems(
-            Update,
-            report_failed_raw_manifest_loading::<M>
-                .run_if(on_event::<AssetLoadFailedEvent<M::RawManifest>>()),
-        )
-        .add_systems(
-            PreUpdate,
-            process_manifest::<M>.run_if(not(resource_exists::<M>)),
-        );
 
         self
     }
@@ -108,7 +112,13 @@ impl RawManifestTracker {
     /// Registers a manifest to be loaded.
     ///
     /// This must be done before [`AssetLoadingState::LOADING`] is complete.
-    pub fn register<M: Manifest>(&mut self, path: PathBuf, asset_server: &mut AssetServer) {
+    pub fn register<M: Manifest>(
+        &mut self,
+        path: impl Into<PathBuf>,
+        asset_server: &mut AssetServer,
+    ) {
+        let path: PathBuf = path.into();
+
         let handle: UntypedHandle = asset_server.load::<M::RawManifest>(path.clone()).untyped();
         let type_id = std::any::TypeId::of::<M>();
 
