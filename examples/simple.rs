@@ -8,7 +8,7 @@ use bevy::{prelude::*, utils::HashMap};
 use leafwing_manifest::{
     asset_state::SimpleAssetState,
     identifier::Id,
-    manifest::Manifest,
+    manifest::{Manifest, ManifestFormat},
     plugin::{AppExt, ManifestPlugin},
 };
 use serde::{Deserialize, Serialize};
@@ -45,6 +45,8 @@ impl Manifest for ItemManifest {
     type RawManifest = ItemManifest;
     // Converting between the raw and final data is trivial, so we can use `Infallible`.
     type ConversionError = std::convert::Infallible;
+
+    const FORMAT: ManifestFormat = ManifestFormat::Ron;
 
     fn get(&self, id: &Id<Item>) -> Option<&Self::Item> {
         self.items.get(id)

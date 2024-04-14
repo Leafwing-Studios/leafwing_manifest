@@ -68,6 +68,58 @@ impl AppExt for App {
                 process_manifest::<M>.run_if(not(resource_exists::<M>)),
             );
 
+        // Add the asset loader to the app via `bevy_common_assets`.
+
+        // AIUI, the extension information is only used if a static asset type is not provided.
+        // We always provide this, so we can provide an empty slice for the extension.
+        let ext_ref = &[];
+
+        match M::FORMAT {
+            #[cfg(feature = "ron")]
+            crate::manifest::ManifestFormat::Ron => {
+                self.add_plugins(
+                    bevy_common_assets::ron::RonAssetPlugin::<M::RawManifest>::new(ext_ref),
+                );
+            }
+            #[cfg(feature = "json")]
+            crate::manifest::ManifestFormat::Json => {
+                self.add_plugins(
+                    bevy_common_assets::json::JsonAssetPlugin::<M::RawManifest>::new(ext_ref),
+                );
+            }
+            #[cfg(feature = "yaml")]
+            crate::manifest::ManifestFormat::Yaml => {
+                self.add_plugins(
+                    bevy_common_assets::yaml::YamlAssetPlugin::<M::RawManifest>::new(ext_ref),
+                );
+            }
+            #[cfg(feature = "toml")]
+            crate::manifest::ManifestFormat::Toml => {
+                self.add_plugins(
+                    bevy_common_assets::toml::TomlAssetPlugin::<M::RawManifest>::new(ext_ref),
+                );
+            }
+            #[cfg(feature = "csv")]
+            crate::manifest::ManifestFormat::Csv => {
+                self.add_plugins(
+                    bevy_common_assets::csv::CsvAssetPlugin::<M::RawManifest>::new(ext_ref),
+                );
+            }
+            #[cfg(feature = "xml")]
+            crate::manifest::ManifestFormat::Xml => {
+                self.add_plugins(
+                    bevy_common_assets::xml::XmlAssetPlugin::<M::RawManifest>::new(ext_ref),
+                );
+            }
+            #[cfg(feature = "msgpack")]
+            crate::manifest::ManifestFormat::MsgPack => {
+                self.add_plugins(bevy_common_assets::msgpack::MsgPackAssetPlugin::<
+                    M::RawManifest,
+                >::new(ext_ref));
+            }
+            crate::manifest::ManifestFormat::Custom => (), // Users must register their own asset loader for custom formats.
+        }
+
         self.world
             .resource_scope(|world, mut asset_server: Mut<AssetServer>| {
                 let mut manifest_tracker = world.resource_mut::<RawManifestTracker>();
