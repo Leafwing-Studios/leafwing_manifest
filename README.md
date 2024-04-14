@@ -8,7 +8,7 @@ TODO.
 
 ## Motivation
 
-So, throughout your game, you're modelling content options as an enum. Classes, buildings, enum types, levels, items...
+So, throughout your game, you're modeling content options as an enum. Classes, buildings, enum types, levels, items...
 
 This is really great for prototyping: enums are simple to set up, and hard to screw up because of exhaustive pattern matching.
 
