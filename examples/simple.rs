@@ -21,13 +21,13 @@ use serde::{Deserialize, Serialize};
 /// Tracking the number of items the player has is done elsewhere, in the player's inventory.
 /// Per-item data, such as durability or enchantments, would also be tracked elsewhere.
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-#[allow(dead_code)]
+#[allow(dead_code)] // Properties are for demonstration purposes only.
 struct Item {
     name: String,
     description: String,
     value: i32,
     weight: f32,
-    max_stack: i32,
+    max_stack: u8,
 }
 
 /// A data-driven manifest, which contains the canonical data for all the items in the game.
