@@ -78,7 +78,7 @@ fn main() {
     }
 
     // The features the lib offers
-    let lib_features = ["ron", "toml", "yaml", "json", "msgpack", "xml", "csv"];
+    let lib_features = ["all_asset_loaders"];
 
     // Generate all possible combinations of lib features
     // and convert them into '--features=<FEATURE_A,FEATURE_B,...>'
