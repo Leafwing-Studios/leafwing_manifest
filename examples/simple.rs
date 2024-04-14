@@ -8,7 +8,7 @@ use bevy::{prelude::*, utils::HashMap};
 use leafwing_manifest::{
     asset_state::SimpleAssetState,
     identifier::Id,
-    manifest::{Manifest, ManifestModificationError},
+    manifest::Manifest,
     plugin::{AppExt, ManifestPlugin},
 };
 use serde::{Deserialize, Serialize};
@@ -48,36 +48,6 @@ impl Manifest for ItemManifest {
 
     fn get(&self, id: &Id<Item>) -> Option<&Self::Item> {
         self.items.get(id)
-    }
-
-    fn get_mut(&mut self, id: &Id<Item>) -> Option<&mut Self::Item> {
-        self.items.get_mut(id)
-    }
-
-    fn insert(
-        &mut self,
-        item: Self::Item,
-    ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
-        // Names can be used as unique identifiers for items;
-        // the from_name method quickly hashes the string into a unique ID.
-        let id = Id::from_name(item.name.clone());
-
-        // Because we're relying on the name as a unique identifier,
-        // we need to check for duplicates.
-        if self.items.contains_key(&id) {
-            Err(ManifestModificationError::DuplicateName(item.name.clone()))
-        } else {
-            self.items.insert(id, item);
-            Ok(id)
-        }
-    }
-
-    fn remove(
-        &mut self,
-        id: &Id<Self::Item>,
-    ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
-        self.items.remove(id);
-        Ok(*id)
     }
 
     // We're able to read the data directly from the serialized format,

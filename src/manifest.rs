@@ -25,8 +25,8 @@ use crate::identifier::Id;
 ///
 /// The elements of the manifest should generally be treated as immutable, as they are shared across the game,
 /// and represent the "canonical" version of the game objects.
-/// However, mutable accessors are provided, allowing for the runtime addition of new game objects,
-/// as might be used for things like user-generated content or modding.
+/// However, mutable accessors are provided under the [`MutableManifest`] trait, allowing for the runtime addition of new game objects,
+/// as might be used for things like user-generated content, manifest-creation tools or modding.
 pub trait Manifest: Sized + Resource {
     /// The raw data type that is loaded from disk.
     ///
@@ -75,6 +75,67 @@ pub trait Manifest: Sized + Resource {
         world: &mut World,
     ) -> Result<Self, Self::ConversionError>;
 
+    /// Gets an item from the manifest by its unique identifier.
+    ///
+    /// Returns [`None`] if no item with the given ID is found.
+    fn get(&self, id: &Id<Self::Item>) -> Option<&Self::Item>;
+}
+
+/// A trait for manifests that have named items.
+///
+/// Naming items can be useful for quick-prototyping, or for hybrid code and data-driven workflows.
+///
+/// However, named items can be less efficient than using [`Id`]s, as they require string lookups and an additional string-based mapping.
+/// As a result, the methods of this trait have been split from the main [`Manifest`] trait,
+/// and should be used with deliberation.
+///
+/// This trait can be combined with [`MutableManifest`] in the form of the [`NamedMutableManifest`] trait to allow for modification by name.
+pub trait NamedManifest: Manifest {
+    /// Gets the unique identifier of an item by its name.
+    ///
+    /// Returns [`None`] if no item with the given name is found.
+    fn id_of(&self, name: &str) -> Option<Id<Self::Item>>;
+
+    /// Gets an item from the manifest by its name.
+    ///
+    /// Returns [`None`] if no item with the given name is found.
+    fn get_by_name(&self, name: &str) -> Option<&Self::Item> {
+        self.id_of(name).and_then(|id| self.get(&id))
+    }
+}
+
+/// A trait for manifests that can be modified.
+///
+/// In many cases, manifests are read-only, and are loaded from disk at the start of the game.
+/// Mutating the data in a manifest is generally not recommended, as it can lead to inconsistencies and bugs.
+/// For example, you may accidentally remove an item that is referenced elsewhere in the game,
+/// or change the properties of an item that is already in use without updating all corresponding instances.
+///
+/// However, there are some cases where mutable manifests are useful:
+/// - User-generated content, where players can create new items or modify existing ones.
+/// - Modding, where the game's data can be changed to create new experiences.
+/// - Debugging, where you want to quickly add or remove items to test new features.
+/// - Procedural generation, where you want to create new items on the fly.
+/// - Temporary changes, such as changing the properties of an item for a single level.
+/// - Huge datasets, where you want to load only a subset of the data into memory at a time.
+///
+/// In many of these cases, only implementing this trait when a feature flag is enabled is a good way to prevent accidental modification.
+///
+/// This trait can be combined with [`NamedManifest`] in the form of the [`NamedMutableManifest`] trait to allow for modification by name.
+pub trait MutableManifest: Manifest {
+    /// Inserts a new item into the manifest.
+    ///
+    /// The item is given a unique identifier, which is returned.
+    ///
+    /// The [`Id`] typically used as a key here should be generated via the [`Id::from_name`] method,
+    /// which hashes the name (fetched from a field on the raw item) into a collision-resistant identifier.
+    ///
+    /// If a duplicate entry is found, you should return [`Err(ManifestModificationError::DuplicateName(name))`](ManifestModificationError::DuplicateName).
+    fn insert(
+        &mut self,
+        item: Self::Item,
+    ) -> Result<Id<Self::Item>, ManifestModificationError<Self>>;
+
     /// Converts and then inserts a raw item into the manifest.
     ///
     /// This is a convenience method that combines the conversion and insertion steps.
@@ -90,19 +151,6 @@ pub trait Manifest: Sized + Resource {
         }
     }
 
-    /// Inserts a new item into the manifest.
-    ///
-    /// The item is given a unique identifier, which is returned.
-    ///
-    /// The [`Id`] typically used as a key here should be generated via the [`Id::from_name`] method,
-    /// which hashes the name (fetched from a field on the raw item) into a collision-resistant identifier.
-    ///
-    /// If a duplicate entry is found, you should return [`Err(ManifestModificationError::DuplicateName(name))`](ManifestModificationError::DuplicateName).
-    fn insert(
-        &mut self,
-        item: Self::Item,
-    ) -> Result<Id<Self::Item>, ManifestModificationError<Self>>;
-
     /// Removes an item from the manifest.
     ///
     /// The item removed is returned, if it was found.
@@ -111,29 +159,55 @@ pub trait Manifest: Sized + Resource {
         id: &Id<Self::Item>,
     ) -> Result<Id<Self::Item>, ManifestModificationError<Self>>;
 
-    /// Gets an item from the manifest by its unique identifier.
-    ///
-    /// Returns [`None`] if no item with the given ID is found.
-    fn get(&self, id: &Id<Self::Item>) -> Option<&Self::Item>;
-
     /// Gets a mutable reference to an item from the manifest by its unique identifier.
     ///
     /// Returns [`None`] if no item with the given ID is found.
     fn get_mut(&mut self, id: &Id<Self::Item>) -> Option<&mut Self::Item>;
 }
 
-/// A trait for manifests that have named items.
+/// A trait for manifests that have named items and can be modified.
 ///
-/// Naming items can be useful for quick-prototyping, or for hybrid code and data-driven workflows.
-///
-/// However, named items can be less efficient than using [`Id`]s, as they require string lookups and an additional string-based mapping.
-/// As a result, the methods of this trait have been split from the main [`Manifest`] trait,
-/// and should be used with deliberation.
-pub trait NamedManifest: Manifest {
-    /// Gets the unique identifier of an item by its name.
+/// This trait combines the [`NamedManifest`] and [`MutableManifest`] traits, and adds convenience methods for the intersection of their features.
+pub trait NamedMutableManifest: NamedManifest + MutableManifest {
+    /// Gets a mutable reference to an item from the manifest by its name.
     ///
     /// Returns [`None`] if no item with the given name is found.
-    fn id_of(&self, name: &str) -> Option<Id<Self::Item>>;
+    fn get_mut_by_name(&mut self, name: &str) -> Option<&mut Self::Item> {
+        self.id_of(name).and_then(move |id| self.get_mut(&id))
+    }
+
+    /// Inserts a new item into the manifest by name.
+    ///
+    /// The item is given a unique identifier, which is returned.
+    fn insert_by_name(
+        &mut self,
+        name: &str,
+        item: Self::Item,
+    ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
+        let id = Id::from_name(name.to_string());
+
+        if self.get(&id).is_some() {
+            Err(ManifestModificationError::DuplicateName(name.to_string()))
+        } else {
+            self.insert(item)
+        }
+    }
+
+    /// Converts and then inserts a raw item into the manifest by name.
+    ///
+    /// This is a convenience method that combines the conversion and insertion steps.
+    fn insert_raw_item_by_name(
+        &mut self,
+        name: &str,
+        raw_item: Self::RawItem,
+    ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
+        let conversion_result = TryFrom::<Self::RawItem>::try_from(raw_item);
+
+        match conversion_result {
+            Ok(item) => self.insert_by_name(name, item),
+            Err(e) => Err(ManifestModificationError::ConversionFailed(e)),
+        }
+    }
 
     /// Removes an item from the manifest by name.
     ///
@@ -145,20 +219,6 @@ pub trait NamedManifest: Manifest {
         self.id_of(name)
             .ok_or_else(|| ManifestModificationError::NameNotFound(name.to_string()))
             .and_then(|id| self.remove(&id))
-    }
-
-    /// Gets an item from the manifest by its name.
-    ///
-    /// Returns [`None`] if no item with the given name is found.
-    fn get_by_name(&self, name: &str) -> Option<&Self::Item> {
-        self.id_of(name).and_then(|id| self.get(&id))
-    }
-
-    /// Gets a mutable reference to an item from the manifest by its name.
-    ///
-    /// Returns [`None`] if no item with the given name is found.
-    fn get_mut_by_name(&mut self, name: &str) -> Option<&mut Self::Item> {
-        self.id_of(name).and_then(move |id| self.get_mut(&id))
     }
 }
 
