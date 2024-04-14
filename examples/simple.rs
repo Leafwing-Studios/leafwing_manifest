@@ -4,7 +4,7 @@
 //! This pattern is great for simple prototyping and small projects, but can be quickly outgrown as the project's needs scale.
 //! See the other examples for more advanced use cases!
 
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{app::AppExit, prelude::*, utils::HashMap};
 use leafwing_manifest::{
     asset_state::SimpleAssetState,
     identifier::Id,
@@ -64,8 +64,9 @@ impl Manifest for ItemManifest {
 
 fn main() {
     App::new()
-        // Default plugins contain `AssetPlugin`, which is required for asset loading.
-        .add_plugins(DefaultPlugins)
+        // leafwing_manifest requires `AssetPlugin` to function
+        // This is included in `DefaultPlugins`, but this example is very small, so it only uses the `MinimalPlugins`
+        .add_plugins((MinimalPlugins, AssetPlugin::default()))
         // This is our simple state, used to navigate the asset loading process.
         .init_state::<SimpleAssetState>()
         // Coordinates asset loading and state transitions.
@@ -74,17 +75,22 @@ fn main() {
         .register_manifest::<ItemManifest>("items.ron")
         .add_systems(
             Update,
-            list_available_items
-                .run_if(run_once())
-                .run_if(in_state(SimpleAssetState::Ready)),
-        );
+            list_available_items.run_if(in_state(SimpleAssetState::Ready)),
+        )
+        .run();
 }
 
 /// This system reads the generated item manifest resource and prints out all the items.
-fn list_available_items(item_manifest: Res<ItemManifest>) {
+fn list_available_items(
+    item_manifest: Res<ItemManifest>,
+    mut app_exit_events: EventWriter<AppExit>,
+) {
     for (id, item) in item_manifest.items.iter() {
         println!("{:?}: {:?}", id, item);
     }
+
+    // We are out of here
+    app_exit_events.send_default();
 }
 
 /// This module is used to generate the item manifest.

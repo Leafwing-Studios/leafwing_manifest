@@ -5,7 +5,7 @@ use bevy::app::{App, Plugin, PreUpdate, Update};
 use bevy::asset::{AssetApp, AssetLoadFailedEvent, AssetServer, Assets, LoadState, UntypedHandle};
 use bevy::ecs::prelude::*;
 use bevy::ecs::system::SystemState;
-use bevy::log::error_once;
+use bevy::log::{error_once, info};
 use bevy::utils::HashMap;
 
 use crate::asset_state::AssetLoadingState;
@@ -72,7 +72,7 @@ impl AppExt for App {
 
         // AIUI, the extension information is only used if a static asset type is not provided.
         // We always provide this, so we can provide an empty slice for the extension.
-        let ext_ref = &[];
+        let ext_ref: &[&'static str; 0] = &[];
 
         match M::FORMAT {
             #[cfg(feature = "ron")]
@@ -286,6 +286,7 @@ pub fn process_manifest<M: Manifest>(
     world: &mut World,
     system_state: &mut SystemState<(Res<RawManifestTracker>, ResMut<Assets<M::RawManifest>>)>,
 ) {
+    info!("Process manifest");
     let (raw_manifest_tracker, mut assets) = system_state.get_mut(world);
     let Some(status) = raw_manifest_tracker.status::<M>() else {
         error_once!(
