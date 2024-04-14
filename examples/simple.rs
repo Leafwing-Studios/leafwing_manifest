@@ -69,7 +69,7 @@ fn main() {
         // Coordinates asset loading and state transitions.
         .add_plugins(ManifestPlugin::<SimpleAssetState>::default())
         // Registers our item manifest, triggering it to be loaded.
-        .register_manifest::<ItemManifest>("assets/items.ron")
+        .register_manifest::<ItemManifest>("items.ron")
         .add_systems(
             Update,
             list_available_items

@@ -2,7 +2,7 @@ use std::any::{type_name, TypeId};
 use std::path::PathBuf;
 
 use bevy::app::{App, Plugin, PreUpdate, Update};
-use bevy::asset::{AssetLoadFailedEvent, AssetServer, Assets, LoadState, UntypedHandle};
+use bevy::asset::{AssetApp, AssetLoadFailedEvent, AssetServer, Assets, LoadState, UntypedHandle};
 use bevy::ecs::prelude::*;
 use bevy::ecs::system::SystemState;
 use bevy::log::error_once;
@@ -49,22 +49,26 @@ pub trait AppExt {
 }
 
 impl AppExt for App {
+    /// Registers the manifest `M`.
+    ///
+    /// By default, the path root is the `assets` folder, just like all Bevy assets.
     fn register_manifest<M: Manifest>(&mut self, path: impl Into<PathBuf>) -> &mut Self {
+        self.init_asset::<M::RawManifest>()
+            .add_systems(
+                Update,
+                report_failed_raw_manifest_loading::<M>
+                    .run_if(on_event::<AssetLoadFailedEvent<M::RawManifest>>()),
+            )
+            .add_systems(
+                PreUpdate,
+                process_manifest::<M>.run_if(not(resource_exists::<M>)),
+            );
+
         self.world
             .resource_scope(|world, mut asset_server: Mut<AssetServer>| {
-                let mut asset_tracker = world.resource_mut::<RawManifestTracker>();
-                asset_tracker.register::<M>(path, asset_server.as_mut());
+                let mut manifest_tracker = world.resource_mut::<RawManifestTracker>();
+                manifest_tracker.register::<M>(path, asset_server.as_mut());
             });
-
-        self.add_systems(
-            Update,
-            report_failed_raw_manifest_loading::<M>
-                .run_if(on_event::<AssetLoadFailedEvent<M::RawManifest>>()),
-        )
-        .add_systems(
-            PreUpdate,
-            process_manifest::<M>.run_if(not(resource_exists::<M>)),
-        );
 
         self
     }
