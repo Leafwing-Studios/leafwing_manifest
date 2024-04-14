@@ -34,7 +34,11 @@ impl<S: AssetLoadingState> Plugin for ManifestPlugin<S> {
             .init_resource::<RawManifestTracker>()
             .add_systems(
                 Update,
-                check_if_assets_have_loaded::<S>.run_if(in_state(S::LOADING)),
+                check_if_manifests_have_loaded::<S>.run_if(in_state(S::LOADING)),
+            )
+            .add_systems(
+                Update,
+                check_if_manifests_are_processed::<S>.run_if(in_state(S::PROCESSING)),
             );
     }
 }
@@ -74,6 +78,19 @@ impl AppExt for App {
 #[derive(Resource, Debug, Default)]
 pub struct RawManifestTracker {
     raw_manifests: HashMap<TypeId, RawManifestStatus>,
+    processing_status: ProcessingStatus,
+}
+
+/// The current processing status of the raw manifests into manifests.
+#[derive(Debug, Default, PartialEq, Clone, Copy)]
+pub enum ProcessingStatus {
+    /// The raw manifests are still being processed.
+    #[default]
+    Processing,
+    /// The raw manifests have been processed and are ready to use.
+    Ready,
+    /// The raw manifests could not be properly processed.
+    Failed,
 }
 
 /// Information about the loading status of a raw manifest.
@@ -132,17 +149,53 @@ impl RawManifestTracker {
             .values()
             .all(|status| status.load_state == LoadState::Loaded)
     }
+
+    /// Returns true if any registered raw manifests have failed to load.
+    pub fn any_manifests_failed(&mut self, asset_server: &AssetServer) -> bool {
+        self.update_load_states(asset_server);
+
+        self.raw_manifests
+            .values()
+            .any(|status| status.load_state == LoadState::Failed)
+    }
+
+    /// Returns the [`ProcessingStatus`] of the raw manifests.
+    pub fn processing_status(&self) -> ProcessingStatus {
+        self.processing_status
+    }
+
+    /// Sets the [`ProcessingStatus`] of the raw manifests.
+    pub fn set_processing_status(&mut self, status: ProcessingStatus) {
+        self.processing_status = status;
+    }
 }
 
 /// Checks if all registered assets have loaded,
-/// and progresses to the next state if they have.
-pub fn check_if_assets_have_loaded<S: AssetLoadingState>(
+/// and progresses to [`AssetLoadingState::PROCESSING`] if they have.
+///
+/// If any assets have failed to load, the state will be set to [`AssetLoadingState::FAILED`].
+pub fn check_if_manifests_have_loaded<S: AssetLoadingState>(
     asset_server: Res<AssetServer>,
     mut raw_manifest_tracker: ResMut<RawManifestTracker>,
     mut next_state: ResMut<NextState<S>>,
 ) {
-    if raw_manifest_tracker.all_manifests_loaded(asset_server.as_ref()) {
+    if raw_manifest_tracker.any_manifests_failed(asset_server.as_ref()) {
+        next_state.set(S::FAILED);
+    } else if raw_manifest_tracker.all_manifests_loaded(asset_server.as_ref()) {
         next_state.set(S::PROCESSING);
+    }
+}
+
+/// Checks if all manifests are processed, and progresses to [`AssetLoadingState::READY`] if they are.
+/// If any manifests have failed to process, the state will be set to [`AssetLoadingState::FAILED`].
+pub fn check_if_manifests_are_processed<S: AssetLoadingState>(
+    raw_manifest_tracker: Res<RawManifestTracker>,
+    mut next_state: ResMut<NextState<S>>,
+) {
+    if raw_manifest_tracker.processing_status() == ProcessingStatus::Failed {
+        next_state.set(S::FAILED);
+    } else if raw_manifest_tracker.processing_status() == ProcessingStatus::Ready {
+        next_state.set(S::READY);
     }
 }
 
@@ -174,7 +227,7 @@ pub fn process_manifest<M: Manifest>(
     let (raw_manifest_tracker, mut assets) = system_state.get_mut(world);
     let Some(status) = raw_manifest_tracker.status::<M>() else {
         error_once!(
-            "No raw manifest status found for manifest type {}",
+            "The status of the raw manifest corresponding to the manifest type {} was not found.",
             type_name::<M>()
         );
         return;
@@ -186,7 +239,7 @@ pub fn process_manifest<M: Manifest>(
         Some(raw_manifest) => raw_manifest,
         None => {
             error_once!(
-                "Failed to get raw manifest for manifest type {}",
+                "Failed to get raw manifest for manifest type {} from the asset server.",
                 type_name::<M>()
             );
             return;
@@ -196,9 +249,14 @@ pub fn process_manifest<M: Manifest>(
     match M::from_raw_manifest(raw_manifest, world) {
         Ok(manifest) => {
             world.insert_resource(manifest);
+            // We can't just use a ResMut above, since we need to drop the borrow before we can construct the manifest.
+            let mut raw_manifest_tracker = world.resource_mut::<RawManifestTracker>();
+            raw_manifest_tracker.set_processing_status(ProcessingStatus::Ready);
         }
         Err(err) => {
             error_once!("Failed to process manifest: {:?}", err);
+            let mut raw_manifest_tracker = world.resource_mut::<RawManifestTracker>();
+            raw_manifest_tracker.set_processing_status(ProcessingStatus::Failed);
         }
     }
 }
