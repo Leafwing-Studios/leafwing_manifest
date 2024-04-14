@@ -9,7 +9,10 @@ use std::{fmt::Debug, hash::Hash, marker::PhantomData};
 
 /// The unique identifier of type `T`.
 ///
-/// This is tiny [`Copy`] type, used to quickly and uniquely identify game objects.
+/// These are generally constructed from names, via [`Id::from_name`],
+/// and represent an identifier for a *kind* of object, not a unique instance of them.
+///
+/// [`Id`] is a tiny [`Copy`] type, used to quickly and uniquely identify game objects.
 /// Unlike enum variants, these can be read from disk and constructed at runtime.
 ///
 /// It can be stored as a component to identify the variety of game object used.

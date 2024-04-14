@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 
 /// The data for as single item that might be held in the player's inventory.
 ///
-/// This data that is shared between all items of the same type:
+/// All items with the same name have the same [`Item`] data:
 /// a sword of slaying is always a sword of slaying, no matter how many swords the player has.
 ///
 /// Tracking the number of items the player has is done elsewhere, in the player's inventory.
