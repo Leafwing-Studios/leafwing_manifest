@@ -1,7 +1,7 @@
 //! `leafwing_manifest` uses a generic identifier type, `Id<T>`, as the key to track data-driven assets throughout their lifecycle.
 //!
 //! This can be constructed from a string-based identifier, stored in the human-readable files,
-//! that marks entries as e.g. "grass" or "hammer_of_smiting".
+//! that marks entries as e.g. "grass" or "hammer".
 
 use bevy::{prelude::Component, reflect::Reflect};
 use serde::{Deserialize, Serialize};
