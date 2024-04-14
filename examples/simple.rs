@@ -46,6 +46,9 @@ impl Manifest for ItemManifest {
     // Converting between the raw and final data is trivial, so we can use `Infallible`.
     type ConversionError = std::convert::Infallible;
 
+    // Our manifest uses a RON file under the hood.
+    // Various common formats are supported out-of-the-box; check the [`ManifestFormat`] docs for more details
+    // and remember to enable the corresponding feature in your `Cargo.toml`!
     const FORMAT: ManifestFormat = ManifestFormat::Ron;
 
     fn get(&self, id: &Id<Item>) -> Option<&Self::Item> {
