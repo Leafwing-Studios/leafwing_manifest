@@ -13,9 +13,13 @@ use leafwing_manifest::{
 };
 use serde::{Deserialize, Serialize};
 
-/// The data for as single [`ItemType`].
+/// The data for as single item that might be held in the player's inventory.
 ///
-/// This is the data that is shared between all items of the same type.
+/// This data that is shared between all items of the same type:
+/// a sword of slaying is always a sword of slaying, no matter how many swords the player has.
+///
+/// Tracking the number of items the player has is done elsewhere, in the player's inventory.
+/// Per-item data, such as durability or enchantments, would also be tracked elsewhere.
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[allow(dead_code)]
 struct Item {
@@ -26,16 +30,20 @@ struct Item {
     max_stack: i32,
 }
 
-/// A data-driven manifest, which contains all the data for all the items in the game.
+/// A data-driven manifest, which contains the canonical data for all the items in the game.
 #[derive(Debug, Resource, Asset, TypePath, Serialize, Deserialize, PartialEq)]
 struct ItemManifest {
     items: HashMap<Id<Item>, Item>,
 }
 
 impl Manifest for ItemManifest {
+    // Because we're not doing any conversion between the raw and final data,
+    // we can use the same type for both.
     type Item = Item;
     type RawItem = Item;
+    // Similarly, we don't need to do any conversion between the raw and final data.
     type RawManifest = ItemManifest;
+    // Converting between the raw and final data is trivial, so we can use `Infallible`.
     type ConversionError = std::convert::Infallible;
 
     fn get(&self, id: &Id<Item>) -> Option<&Self::Item> {
