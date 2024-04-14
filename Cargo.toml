@@ -8,9 +8,10 @@ license = "MIT OR Apache-2.0"
 edition = "2021"
 categories = ["games", "game-development"]
 keywords = ["bevy"]
-exclude = ["assets/**/*", ".github/**/*"]
+exclude = ["assets/**/*", "tools/**/*", ".github/**/*"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+members = ["./", "tools/ci"]
 
 [dependencies]
 bevy = { version = "0.13", default-features = false, features = ["bevy_asset"] }
