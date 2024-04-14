@@ -45,11 +45,11 @@ pub trait AppExt {
     ///
     /// The final manifest type must implement [`Manifest`], while the raw manifest type must implement [`Asset`](bevy::asset::Asset).
     /// This must be called for each type of manifest you wish to load.
-    fn register_manifest<M: Manifest>(&mut self, path: PathBuf) -> &mut Self;
+    fn register_manifest<M: Manifest>(&mut self, path: impl Into<PathBuf>) -> &mut Self;
 }
 
 impl AppExt for App {
-    fn register_manifest<M: Manifest>(&mut self, path: PathBuf) -> &mut Self {
+    fn register_manifest<M: Manifest>(&mut self, path: impl Into<PathBuf>) -> &mut Self {
         self.world
             .resource_scope(|world, mut asset_server: Mut<AssetServer>| {
                 let mut asset_tracker = world.resource_mut::<RawManifestTracker>();
@@ -91,7 +91,13 @@ impl RawManifestTracker {
     /// Registers a manifest to be loaded.
     ///
     /// This must be done before [`AssetLoadingState::LOADING`] is complete.
-    pub fn register<M: Manifest>(&mut self, path: PathBuf, asset_server: &mut AssetServer) {
+    pub fn register<M: Manifest>(
+        &mut self,
+        path: impl Into<PathBuf>,
+        asset_server: &mut AssetServer,
+    ) {
+        let path: PathBuf = path.into();
+
         let handle: UntypedHandle = asset_server.load::<M::RawManifest>(path.clone()).untyped();
         let type_id = std::any::TypeId::of::<M>();
 
