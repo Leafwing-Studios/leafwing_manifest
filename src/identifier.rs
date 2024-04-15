@@ -93,7 +93,7 @@ impl<T> Id<T> {
     ///
     /// This is primarily intended for debugging purposes.
     #[must_use]
-    pub const fn value(&self) -> u64 {
+    pub const fn raw(&self) -> u64 {
         self.value
     }
 
@@ -105,7 +105,7 @@ impl<T> Id<T> {
     /// When constructing `Id`s from raw values, you must ensure that the value is unique.
     /// Using an atomic counter or a UUID generator are common alternate approaches.
     #[must_use]
-    pub const fn from_value(value: u64) -> Self {
+    pub const fn from_raw(value: u64) -> Self {
         Id {
             value,
             _phantom: PhantomData,
