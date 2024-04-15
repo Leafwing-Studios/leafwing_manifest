@@ -133,22 +133,6 @@ pub enum ManifestFormat {
     Custom,
 }
 
-/// A trait for manifests that have named items.
-///
-/// Naming items can be useful for quick-prototyping, or for hybrid code and data-driven workflows.
-///
-/// However, named items can be less efficient than using [`Id`]s, as they require string lookups and an additional string-based mapping.
-/// As a result, the methods of this trait have been split from the main [`Manifest`] trait,
-/// and should be used with deliberation.
-///
-/// This trait can be combined with [`MutableManifest`] in the form of the [`NamedMutableManifest`] trait to allow for modification by name.
-pub trait NamedManifest: Manifest {
-    /// Gets the unique identifier of an item by its name.
-    ///
-    /// Returns [`None`] if no item with the given name is found.
-    fn id_of(&self, name: &str) -> Option<Id<Self::Item>>;
-}
-
 /// A trait for manifests that can be modified.
 ///
 /// In many cases, manifests are read-only, and are loaded from disk at the start of the game.
@@ -165,8 +149,6 @@ pub trait NamedManifest: Manifest {
 /// - Huge datasets, where you want to load only a subset of the data into memory at a time.
 ///
 /// In many of these cases, only implementing this trait when a feature flag is enabled is a good way to prevent accidental modification.
-///
-/// This trait can be combined with [`NamedManifest`] in the form of the [`NamedMutableManifest`] trait to allow for modification by name.
 pub trait MutableManifest: Manifest {
     /// Inserts a new item into the manifest.
     ///
