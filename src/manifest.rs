@@ -89,11 +89,13 @@ pub trait Manifest: Sized + Resource {
     /// Gets an item from the manifest by its unique identifier.
     ///
     /// Returns [`None`] if no item with the given ID is found.
+    #[must_use]
     fn get(&self, id: Id<Self::Item>) -> Option<&Self::Item>;
 
     /// Gets an item from the manifest by its name.
     ///
     /// Returns [`None`] if no item with the given name is found.
+    #[must_use]
     fn get_by_name(&self, name: impl AsRef<String>) -> Option<&Self::Item> {
         self.get(Id::from_name(name.as_ref()))
     }
@@ -249,11 +251,13 @@ pub trait MutableManifest: Manifest {
     /// Gets a mutable reference to an item from the manifest by its unique identifier.
     ///
     /// Returns [`None`] if no item with the given ID is found.
+    #[must_use]
     fn get_mut(&mut self, id: Id<Self::Item>) -> Option<&mut Self::Item>;
 
     /// Gets a mutable reference to an item from the manifest by its name.
     ///
     /// Returns [`None`] if no item with the given name is found.
+    #[must_use]
     fn get_mut_by_name(&mut self, name: impl AsRef<str>) -> Option<&mut Self::Item> {
         self.get_mut(Id::from_name(name.as_ref()))
     }

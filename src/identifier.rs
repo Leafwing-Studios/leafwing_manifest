@@ -63,6 +63,7 @@ impl<T> Id<T> {
     /// // But hashing a different string will produce a different ID.
     /// assert!(BEVY != bavy);
     /// ```
+    #[must_use]
     pub const fn from_name(name: &str) -> Self {
         // Algorithm adopted from <https://cp-algorithms.com/string/string-hashing.htl>
         let mut value = 0;
@@ -91,6 +92,7 @@ impl<T> Id<T> {
     /// Returns the raw value of the ID.
     ///
     /// This is primarily intended for debugging purposes.
+    #[must_use]
     pub const fn value(&self) -> u64 {
         self.value
     }
@@ -102,6 +104,7 @@ impl<T> Id<T> {
     ///
     /// When constructing `Id`s from raw values, you must ensure that the value is unique.
     /// Using an atomic counter or a UUID generator are common alternate approaches.
+    #[must_use]
     pub const fn from_value(value: u64) -> Self {
         Id {
             value,
