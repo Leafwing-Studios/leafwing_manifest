@@ -15,10 +15,11 @@ That manifest is then used to spawn and look up the properties of specific kinds
 
 An in-memory resource where you can look up the statistics for various game objects is incredibly useful:
 
-1. It's super easy to spawn new game objects dynamically inside of gameplay code. Simply write a helper method once, and then spawn any object you want in a single command.
-2. Manifests offer a clear list of all objects of a given kind: great for both dev tools and in-game encyclopedias.
-3. Using manifests abstracts away messy asset loading (and unloading) code into a single consistent pattern that can grow with your project.
-4. Heavy data can be deduplicated by simply looking it up in the manifest when needed.
+1. It's super easy to spawn new game objects dynamically inside of gameplay code, including spawning multiple copies of an object well after the initial asset load. Simply write a helper method once, and then spawn any object you want in a single command.
+2. Spawning multiple clones of the same gameplay object is safer. Since the manifest is generally read-only, you know you always have a "clean" version to clone from.
+3. Manifests offer a clear list of all objects of a given kind: great for both dev tools and in-game encyclopedias.
+4. Using manifests abstracts away messy asset loading (and unloading) code into a single consistent pattern that can grow with your project.
+5. Heavy data can be deduplicated by simply looking it up in the manifest when needed.
 
 For more background reading on why this crate exists, and the design decisions made, check out [`MOTIVATION.md`].
 
