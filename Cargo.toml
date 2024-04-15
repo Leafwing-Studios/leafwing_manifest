@@ -1,9 +1,17 @@
 [package]
 name = "leafwing_manifest"
 version = "0.1.0"
+authors = ["Leafwing Studios"]
+homepage = "https://leafwing-studios.com/"
+repository = "https://github.com/leafwing-studios/leafwing_manifest"
+license = "MIT OR Apache-2.0"
 edition = "2021"
+categories = ["games", "game-development"]
+keywords = ["bevy"]
+exclude = ["assets/**/*", "tools/**/*", ".github/**/*"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+members = ["./", "tools/ci"]
 
 [dependencies]
 bevy = { version = "0.13", default-features = false, features = ["bevy_asset"] }
@@ -15,6 +23,9 @@ thiserror = "1.0.58"
 # All file formats are disabled by default: you will typically want to enable
 # only the formats you need. Picking one per project is recommended.
 default = []
+# Support for all file format features
+# Useful for testing
+all_asset_loaders = ["ron", "toml", "yaml", "json", "msgpack", "xml", "csv"]
 # Support for the RON file format
 # This is a good choice for most projects, as it is a simple, human-readable and plays nice with enums.
 ron = ["bevy_common_assets/ron"]

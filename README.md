@@ -96,6 +96,9 @@ Rather than encouraging users to build progressively more complex (and fragile) 
 This conversion process is flexible and direct, and involves ordinary synchronous Rust code. Here's the heart of the `Manifest` trait:
 
 ```rust
+use bevy::prelude::*;
+use std::error::Error;
+
 trait Manifest: Sized {
     type Item;
     type Err: Error;
