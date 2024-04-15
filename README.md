@@ -52,7 +52,7 @@ There's a standard solution to this: **data-driven** content.
 Rather than defining your variants in code, define their properties using data that you can store on a hard drive,
 and then use the variations in the supplied fields to create a rich variation in gameplay by parsing these properties inside your game.
 
-## Basics of implementing data-driven content
+### Basics of implementing data-driven content
 
 In a data-driven design architecture, data must be transformed from the **serialized format**, which is stored on the disk, into the **in-game representation**, which is used by game systems and logic to actually interact in the game world.
 
@@ -63,7 +63,7 @@ We can start with a very simple architecture:
 3. During the spawning process, deserialize that file directly into a game object.
 4. Spawn the generated game object.
 
-## More sophisticated data-driven content
+### More sophisticated data-driven content
 
 Now, there are several areas for improvement.
 Let's go over them now, and then tackle them one at a time:
