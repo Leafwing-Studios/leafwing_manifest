@@ -21,7 +21,7 @@ An in-memory resource where you can look up the statistics for various game obje
 4. Using manifests abstracts away messy asset loading (and unloading) code into a single consistent pattern that can grow with your project.
 5. Heavy data can be deduplicated by simply looking it up in the manifest when needed.
 
-For more background reading on why this crate exists, and the design decisions made, check out [`MOTIVATION.md`].
+For more background reading on why this crate exists, and the design decisions made, check out [`MOTIVATION.md`](https://github.com/Leafwing-Studios/leafwing_manifest/blob/main/MOTIVATION.md).
 
 ## Usage
 
