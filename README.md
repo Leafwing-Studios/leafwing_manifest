@@ -1,119 +1,45 @@
 # leafwing_manifest
 
 `leafwing_manifest` is a straightforward, opinionated tool to transform "assets on disk" into flexible, robust objects inside of your Bevy game.
+There are four key concepts:
+
+1. **Id:** A unique identifier for objects of a given class (e.g. monsters, tile types or levels). Commonly stored as a components on game entities.
+2. **Item:** An in-memory representation of all of the shared data (e.g. name, asset handles, statistics) of game objects of a given kind.
+3. **Manifest:** a Bevy `Resource` which contains a mapping from identitifiers to items.
+4. **Raw manifest:** a serialization-friendly representation of the data stored in a manifest.
+
+Data is deserialized from disk into a raw manifest, which is processed into a manifest which contains a list of all available game objects of a given class.
+That manifest is then used to spawn and look up the properties of specific kinds of game objects in your game code.
+
+## Why manifests rock
+
+An in-memory resource where you can look up the statistics for various game objects is incredibly useful:
+
+1. It's super easy to spawn new game objects dynamically inside of gameplay code, including spawning multiple copies of an object well after the initial asset load. Simply write a helper method once, and then spawn any object you want in a single command.
+2. Spawning multiple clones of the same gameplay object is safer. Since the manifest is generally read-only, you know you always have a "clean" version to clone from.
+3. Manifests offer a clear list of all objects of a given kind: great for both dev tools and in-game encyclopedias.
+4. Using manifests abstracts away messy asset loading (and unloading) code into a single consistent pattern that can grow with your project.
+5. Heavy data can be deduplicated by simply looking it up in the manifest when needed.
+
+For more background reading on why this crate exists, and the design decisions made, check out [`MOTIVATION.md`].
 
 ## Usage
 
-TODO.
+To get started:
 
-## Motivation
+1. Add an asset loading state that implements `AssetState` (like the `SimpleAssetState` that we ship) to your app that handles the lifecycle of loading assets.
+2. Add `ManifestPlugin<S: AssetState>` to your `App`.
+3. Create a struct (e.g. `Monster`) that stores the final data that you want to share between all objects of the same kind.
+4. Put your game design hat on and define each monster's life, level, name and so on in a serialized format like RON.
+5. Register the manifest in your app with `app.register_manifest::<Monster>`, supplying the path to the data to load.
+6. In your game logic, spawn monsters or look up their statistics by calling `Manifest<Monster>.get(id: Id<Monster>)`.
 
-So, throughout your game, you're modeling content options as an enum. Classes, buildings, enum types, levels, items...
+See the `simple.rs` example to jump right in!
 
-This is really great for prototyping: enums are simple to set up, and hard to screw up because of exhaustive pattern matching.
+If your assets require processing (for validation, or if they contain references to other assets),
+you will need a raw manifest type, and corresponding raw item type.
+Take a look at the `raw_manifest.rs` example next!
 
-However, they also require exhaustive enumeration. Adding another item type requires adding an arm to *everywhere* that this is being used, and you can't just add more items off in their own file without extending this.
-
-So instead, we could use traits! Traits are extensible: great for this sort of "open set with shared properties" abstraction.
-While traits can be a nuisance (you almost certainly need to ensure your trait is object-safe!), they can be a nice fit for a lot of games or content areas.
-
-But then you realize either:
-
-1. You want your game to be easily moddable, by people who don't have access to your source code and don't know Rust.
-2. You have artists and game designers on your team who want to be able to just quickly author new content without having to change the code at all.
-
-There's a standard solution to this: **data-driven** content.
-Rather than defining your variants in code, define their properties using data that you can store on a hard drive,
-and then use the variations in the supplied fields to create a rich variation in gameplay by parsing these properties inside your game.
-
-## Basics of implementing data-driven content
-
-In a data-driven design architecture, data must be transformed from the **serialized format**, stored on the disk, into the **in-game representation**, used by game systems and logic to actually interact in the game world.
-
-We can start with a very simple architecture:
-
-1. Store a string corresponding to each type of game object that matches the file name of the serialized data.
-2. When we want to spawn an object of that type, pass in that string.
-3. During the spawning process, deserialize that file directly into a game object.
-4. Spawn the generated game object.
-
-## More sophisticated data-driven content
-
-Now, there are several areas for improvement.
-Let's go over them now, and then tackle them one at a time:
-
-1. Strings are heavy identifiers: as long as we can convert to and from a nice human-readable string, we don't care about actually storing that identifier everywhere.
-2. Constantly deserializing from disk is very slow.
-3. Some final game objects are very heavy: we want to look up the data when we need it, rather than storing thousands of copies of it for every object.
-4. We can't always translate directly from the serialized to in-game representation. This is particularly common and important when we need to reference *other* serialized content inside of our game object. It also comes up when you want to simplify the serialized representation to make it more space efficient or easier to author.
-
-In "problems left for future work":
-
-1. Text-based file formats are easy to mess up: tools for validating these would be very useful.
-2. Text-based file formats are easy to mess up: it would be great to have designer-friendly tools for authoring them.
-
-Note that we *don't* compress our manifests into a binary format in our examples, and while you *can* do so, we don't encourage you to (except perhaps in shipped games).
-The added pain during version control and debugging is not worth the space savings (or benchmark-requiring loading speed improvements).
-
-### Efficient identifiers
-
-Simplifying our identifiers is pretty easy.
-All we need to do is to store a bidirectional map between the identifiers and our handy strings!
-In this crate, we call this map a **manifest**: it's an exhaustive listing of goods!
-
-But what makes a good identifier?
-Identifiers should be:
-
-1. Compact: they shouldn't take up much space
-2. Stable: adding another game object shouldn't break all of your existing IDs
-3. Low-collision: game objects should have a low risk of colliding with
-
-To achieve these properties, we hash the strings, using the stored hashes as our opaque identifiers!
-
-### Object storage deduplication
-
-We can use the generated manifest to meet two of our other goals: avoiding constant deserialization and deduplicating heavy data.
-
-The manifest (or a central asset server) holds a single, canonical copy of each game object.
-
-Depending on your needs, you can either look up the value as it is needed (using the unique key), or copy it directly into your game object.
-
-### Intermediate deserialization formats
-
-Jumping directly from the serialized form to the in-game form of an asset is often not particularly feasible or fun. For example:
-
-1. Data-driven game objects commonly want to reference *other* data-driven game objects, and the patterns here don't always obey nice clean tree structures.
-This comes up when dealing with things like "loot drop tables", "enemy spawn rates for each level", or "allowable terrain for buildings".
-2. You may need to reference other assets, such as meshes or sound effects, that you aren't sure will exist.
-3. Parsing and storing enum-like values from string-based formats like JSON can be fraught with footguns.
-
-Rather than encouraging users to build progressively more complex (and fragile) serializers and deserializers, `leafwing_manifest` takes a pragmatic approach:
-
-1. For each manifest, users may create a permissive, intermediate **raw manifest** data structure that maps directly to the constraints of the underlying file format (e.g. JSON).
-2. Load all of the raw manifests first.
-3. Once all raw manifests are loaded, attempt to convert them into their **processed manifest** forms, cross-referencing other manifests as needed.
-
-This conversion process is flexible and direct, and involves ordinary synchronous Rust code. Here's the heart of the `Manifest` trait:
-
-```rust
-use bevy::prelude::*;
-use std::error::Error;
-
-trait Manifest: Sized {
-    type Item;
-    type Err: Error;
-    type RawManifest;
-    type RawItem;
-
-    fn from_raw_manifest(
-        raw_manifest: Self::RawManifest,
-        _world: &mut World,
-    ) -> Result<Self, Self::Err>;
-}
-```
-
-If you don't require this intermediate step, you can simply leave it out! Set `Err = ()`, `RawManifest=Self` and `RawItem=Item` to avoid added work or complexity.
-
-If you've ever written a `TryFrom` impl in Rust before, this should be very familiar to you.
-Attempt to convert the items in the collection, one at a time, returning errors using the `?` operator as needed.
-The only wrinkle is that we *also* have access to the entire Bevy `World`, allowing us to access (and process) other manifests as needed.
+Note that we *don't* compress our manifests into a binary format in our examples.
+While you *can* do so, we don't encourage you to (except as an optimization in shipped games).
+The added pain during version control and debugging is typically not worth the improvements to file size or loading speed during development.
