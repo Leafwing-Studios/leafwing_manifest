@@ -64,8 +64,7 @@ impl<T> Id<T> {
     /// assert!(BEVY != bavy);
     /// ```
     pub const fn from_name(name: &str) -> Self {
-        // Algorithm adopted from <https://cp-algorithms.com/string/string-hashing.html>
-
+        // Algorithm adopted from <https://cp-algorithms.com/string/string-hashing.htl>
         let mut value = 0;
         let mut p_pow = 1;
 
