@@ -1,12 +1,7 @@
 # leafwing_manifest
 
 `leafwing_manifest` is a straightforward, opinionated tool to transform "assets on disk" into flexible, robust objects inside of your Bevy game.
-
-For more background reading on why this crate exists, and the design decisions made, check out [`MOTIVATION.md`].
-
-## Usage
-
-`leafwing_manifest` has four key concepts:
+There are four key concepts:
 
 1. **Id:** A unique identifier for objects of a given class (e.g. monsters, tile types or levels). Commonly stored as a components on game entities.
 2. **Item:** An in-memory representation of all of the shared data (e.g. name, asset handles, statistics) of game objects of a given kind.
@@ -15,6 +10,19 @@ For more background reading on why this crate exists, and the design decisions m
 
 Data is deserialized from disk into a raw manifest, which is processed into a manifest which contains a list of all available game objects of a given class.
 That manifest is then used to spawn and look up the properties of specific kinds of game objects in your game code.
+
+## Why manifests rock
+
+An in-memory resource where you can look up the statistics for various game objects is incredibly useful:
+
+1. It's super easy to spawn new game objects dynamically inside of gameplay code. Simply write a helper method once, and then spawn any object you want in a single command.
+2. Manifests offer a clear list of all objects of a given kind: great for both dev tools and in-game encyclopedias.
+3. Using manifests abstracts away messy asset loading (and unloading) code into a single consistent pattern that can grow with your project.
+4. Heavy data can be deduplicated by simply looking it up in the manifest when needed.
+
+For more background reading on why this crate exists, and the design decisions made, check out [`MOTIVATION.md`].
+
+## Usage
 
 To get started:
 
