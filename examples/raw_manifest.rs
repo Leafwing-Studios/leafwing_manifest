@@ -130,15 +130,13 @@ impl Manifest for ItemManifest {
 
 fn main() {
     App::new()
-        // leafwing_manifest requires `AssetPlugin` to function
-        // This is included in `DefaultPlugins`, but this example is very small, so it only uses the `MinimalPlugins`
-        .add_plugins((MinimalPlugins, AssetPlugin::default()))
+        .add_plugins(DefaultPlugins)
         // This is our simple state, used to navigate the asset loading process.
         .init_state::<SimpleAssetState>()
         // Coordinates asset loading and state transitions.
         .add_plugins(ManifestPlugin::<SimpleAssetState>::default())
         // Registers our item manifest, triggering it to be loaded.
-        .register_manifest::<ItemManifest>("items.ron")
+        .register_manifest::<ItemManifest>("raw_items.ron")
         .add_systems(
             Update,
             list_available_items.run_if(in_state(SimpleAssetState::Ready)),
@@ -169,32 +167,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn generate_item_manifest() {
+    fn generate_raw_item_manifest() {
         let mut items = Vec::default();
 
-        items.insert(
-            Id::from_name("sword".into()),
-            RawItem {
-                name: "sword".into(),
-                description: "A sharp sword".into(),
-                value: 10,
-                weight: 2.0,
-                max_stack: 1,
-                sprite: PathBuf::from("sprites/sword.png"),
-            },
-        );
+        items.push(RawItem {
+            name: "sword".into(),
+            description: "A sharp sword".into(),
+            value: 10,
+            weight: 2.0,
+            max_stack: 1,
+            sprite: PathBuf::from("sprites/sword.png"),
+        });
 
-        items.insert(
-            Id::from_name("shield".into()),
-            RawItem {
-                name: "shield".into(),
-                description: "A sturdy shield".into(),
-                value: 5,
-                weight: 5.0,
-                max_stack: 1,
-                sprite: PathBuf::from("sprites/shield.png"),
-            },
-        );
+        items.push(RawItem {
+            name: "shield".into(),
+            description: "A sturdy shield".into(),
+            value: 5,
+            weight: 5.0,
+            max_stack: 1,
+            sprite: PathBuf::from("sprites/shield.png"),
+        });
 
         let item_manifest = RawItemManifest { items };
 
@@ -202,7 +194,7 @@ mod tests {
         println!("{}", serialized);
 
         // Save the results, to ensure that our example has a valid manifest to read.
-        std::fs::write("assets/items.ron", &serialized).unwrap();
+        std::fs::write("assets/raw_items.ron", &serialized).unwrap();
 
         let deserialized: RawItemManifest = ron::de::from_str(&serialized).unwrap();
 

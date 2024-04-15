@@ -1,0 +1,20 @@
+(
+    items: [
+        (
+            name: "sword",
+            description: "A sharp sword",
+            value: 10,
+            weight: 2.0,
+            max_stack: 1,
+            sprite: "sprites/sword.png",
+        ),
+        (
+            name: "shield",
+            description: "A sturdy shield",
+            value: 5,
+            weight: 5.0,
+            max_stack: 1,
+            sprite: "sprites/shield.png",
+        ),
+    ],
+)
