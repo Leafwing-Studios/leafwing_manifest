@@ -24,7 +24,7 @@ use crate::identifier::Id;
 /// various helper methods are provided to look up objects by their name.
 /// This can be very useful for quick prototyping, or for hybrid code and data-driven workflows.
 /// However, these methods are generally less efficient than using the `Id` directly,
-/// as [`Id::from_name`] requires both a string allocation and a hash calculation.
+/// as [`Id::from_name`] requires another hash calculation.
 ///
 /// The elements of the manifest should generally be treated as immutable, as they are shared across the game,
 /// and represent the "canonical" version of the game objects.
@@ -94,8 +94,8 @@ pub trait Manifest: Sized + Resource {
     /// Gets an item from the manifest by its name.
     ///
     /// Returns [`None`] if no item with the given name is found.
-    fn get_by_name(&self, name: impl Into<String>) -> Option<&Self::Item> {
-        self.get(Id::from_name(name.into()))
+    fn get_by_name(&self, name: impl AsRef<String>) -> Option<&Self::Item> {
+        self.get(Id::from_name(name.as_ref()))
     }
 }
 
@@ -198,15 +198,15 @@ pub trait MutableManifest: Manifest {
     /// The item is given a unique identifier, which is returned.
     fn insert_by_name(
         &mut self,
-        name: impl Into<String>,
+        name: impl AsRef<str>,
         item: Self::Item,
     ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
-        let name = name.into();
-
-        let id = Id::from_name(name.clone());
+        let id = Id::from_name(name.as_ref());
 
         if self.get(id).is_some() {
-            Err(ManifestModificationError::DuplicateName(name))
+            Err(ManifestModificationError::DuplicateName(
+                name.as_ref().to_string(),
+            ))
         } else {
             self.insert(item)
         }
@@ -241,9 +241,9 @@ pub trait MutableManifest: Manifest {
     /// The item removed is returned, if it was found.
     fn remove_by_name(
         &mut self,
-        name: impl Into<String>,
+        name: impl AsRef<str>,
     ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
-        self.remove(&Id::from_name(name.into()))
+        self.remove(&Id::from_name(name.as_ref()))
     }
 
     /// Gets a mutable reference to an item from the manifest by its unique identifier.
@@ -254,8 +254,8 @@ pub trait MutableManifest: Manifest {
     /// Gets a mutable reference to an item from the manifest by its name.
     ///
     /// Returns [`None`] if no item with the given name is found.
-    fn get_mut_by_name(&mut self, name: impl Into<String>) -> Option<&mut Self::Item> {
-        self.get_mut(Id::from_name(name.into()))
+    fn get_mut_by_name(&mut self, name: impl AsRef<str>) -> Option<&mut Self::Item> {
+        self.get_mut(Id::from_name(name.as_ref()))
     }
 }
 
