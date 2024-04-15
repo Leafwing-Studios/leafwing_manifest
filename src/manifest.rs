@@ -19,10 +19,12 @@ use crate::identifier::Id;
 /// With a manifest in hand, game objects are looked up by their unique [`Id`],
 /// returning an object of type [`Manifest::Item`].
 ///
-/// Types that implement [`Manifest`] are generally simple hashmap data structures, mapping `Id<Item>` to `Item`.
-/// However, if looking up objects by their name is required, the [`NamedManifest`] trait can be added,
-/// and strings are used as the key instead of `Id<Item>`.
-/// The `Id` can then be quickly generated, using the built-in [`Id::from_name`] stable hash method.
+/// Types that implement [`Manifest`] are almost always simple hashmap data structures, mapping `Id<Item>` to `Item`.
+/// Because [`Id`]s can be deterministically generated from a string name,
+/// various helper methods are provided to look up objects by their name.
+/// This can be very useful for quick prototyping, or for hybrid code and data-driven workflows.
+/// However, these methods are generally less efficient than using the `Id` directly,
+/// as [`Id::from_name`] requires both a string allocation and a hash calculation.
 ///
 /// The elements of the manifest should generally be treated as immutable, as they are shared across the game,
 /// and represent the "canonical" version of the game objects.
@@ -87,7 +89,14 @@ pub trait Manifest: Sized + Resource {
     /// Gets an item from the manifest by its unique identifier.
     ///
     /// Returns [`None`] if no item with the given ID is found.
-    fn get(&self, id: &Id<Self::Item>) -> Option<&Self::Item>;
+    fn get(&self, id: Id<Self::Item>) -> Option<&Self::Item>;
+
+    /// Gets an item from the manifest by its name.
+    ///
+    /// Returns [`None`] if no item with the given name is found.
+    fn get_by_name(&self, name: &str) -> Option<&Self::Item> {
+        self.get(Id::from_name(name))
+    }
 }
 
 /// The file format of the raw manifest on disk.
@@ -136,13 +145,6 @@ pub trait NamedManifest: Manifest {
     ///
     /// Returns [`None`] if no item with the given name is found.
     fn id_of(&self, name: &str) -> Option<Id<Self::Item>>;
-
-    /// Gets an item from the manifest by its name.
-    ///
-    /// Returns [`None`] if no item with the given name is found.
-    fn get_by_name(&self, name: &str) -> Option<&Self::Item> {
-        self.id_of(name).and_then(|id| self.get(&id))
-    }
 }
 
 /// A trait for manifests that can be modified.
@@ -191,32 +193,6 @@ pub trait MutableManifest: Manifest {
             Err(e) => Err(ManifestModificationError::ConversionFailed(e)),
         }
     }
-
-    /// Removes an item from the manifest.
-    ///
-    /// The item removed is returned, if it was found.
-    fn remove(
-        &mut self,
-        id: &Id<Self::Item>,
-    ) -> Result<Id<Self::Item>, ManifestModificationError<Self>>;
-
-    /// Gets a mutable reference to an item from the manifest by its unique identifier.
-    ///
-    /// Returns [`None`] if no item with the given ID is found.
-    fn get_mut(&mut self, id: &Id<Self::Item>) -> Option<&mut Self::Item>;
-}
-
-/// A trait for manifests that have named items and can be modified.
-///
-/// This trait combines the [`NamedManifest`] and [`MutableManifest`] traits, and adds convenience methods for the intersection of their features.
-pub trait NamedMutableManifest: NamedManifest + MutableManifest {
-    /// Gets a mutable reference to an item from the manifest by its name.
-    ///
-    /// Returns [`None`] if no item with the given name is found.
-    fn get_mut_by_name(&mut self, name: &str) -> Option<&mut Self::Item> {
-        self.id_of(name).and_then(move |id| self.get_mut(&id))
-    }
-
     /// Inserts a new item into the manifest by name.
     ///
     /// The item is given a unique identifier, which is returned.
@@ -227,7 +203,7 @@ pub trait NamedMutableManifest: NamedManifest + MutableManifest {
     ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
         let id = Id::from_name(name.to_string());
 
-        if self.get(&id).is_some() {
+        if self.get(id).is_some() {
             Err(ManifestModificationError::DuplicateName(name.to_string()))
         } else {
             self.insert(item)
@@ -250,6 +226,14 @@ pub trait NamedMutableManifest: NamedManifest + MutableManifest {
         }
     }
 
+    /// Removes an item from the manifest.
+    ///
+    /// The item removed is returned, if it was found.
+    fn remove(
+        &mut self,
+        id: &Id<Self::Item>,
+    ) -> Result<Id<Self::Item>, ManifestModificationError<Self>>;
+
     /// Removes an item from the manifest by name.
     ///
     /// The item removed is returned, if it was found.
@@ -257,9 +241,19 @@ pub trait NamedMutableManifest: NamedManifest + MutableManifest {
         &mut self,
         name: &str,
     ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
-        self.id_of(name)
-            .ok_or_else(|| ManifestModificationError::NameNotFound(name.to_string()))
-            .and_then(|id| self.remove(&id))
+        self.remove(&Id::from_name(name))
+    }
+
+    /// Gets a mutable reference to an item from the manifest by its unique identifier.
+    ///
+    /// Returns [`None`] if no item with the given ID is found.
+    fn get_mut(&mut self, id: Id<Self::Item>) -> Option<&mut Self::Item>;
+
+    /// Gets a mutable reference to an item from the manifest by its name.
+    ///
+    /// Returns [`None`] if no item with the given name is found.
+    fn get_mut_by_name(&mut self, name: &str) -> Option<&mut Self::Item> {
+        self.get_mut(Id::from_name(name))
     }
 }
 

@@ -9,7 +9,7 @@ use std::{fmt::Debug, hash::Hash, marker::PhantomData};
 
 /// The unique identifier of type `T`.
 ///
-/// These are generally constructed from names, via [`Id::from_name`],
+/// These are constructed by hashing object names via [`Id::from_name`],
 /// and represent an identifier for a *kind* of object, not a unique instance of them.
 ///
 /// [`Id`] is a tiny [`Copy`] type, used to quickly and uniquely identify game objects.
@@ -52,12 +52,16 @@ impl<T> Id<T> {
 
     /// Creates a new ID from human-readable string identifier.
     ///
-    /// This ID is created as a hash of the string.
-    pub fn from_name(name: String) -> Self {
+    /// The ID is created as a hash of the string.
+    /// This method allocates a new string, so it comes with a performance cost.
+    /// When possible, pass in an owned string to avoid the allocation.
+    pub fn from_name(name: impl AsRef<str>) -> Self {
         // Algorithm adopted from <https://cp-algorithms.com/string/string-hashing.html>
 
         let mut value = 0;
         let mut p_pow = 1;
+
+        let name = name.as_ref().to_string();
 
         name.bytes().for_each(|byte| {
             value = (value + (byte as u64 + 1) * p_pow) % HASH_M;

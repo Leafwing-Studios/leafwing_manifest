@@ -51,8 +51,8 @@ impl Manifest for ItemManifest {
     // and remember to enable the corresponding feature in your `Cargo.toml`!
     const FORMAT: ManifestFormat = ManifestFormat::Ron;
 
-    fn get(&self, id: &Id<Item>) -> Option<&Self::Item> {
-        self.items.get(id)
+    fn get(&self, id: Id<Item>) -> Option<&Self::Item> {
+        self.items.get(&id)
     }
 
     // We're able to read the data directly from the serialized format,
