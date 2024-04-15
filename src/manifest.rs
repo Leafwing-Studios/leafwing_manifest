@@ -48,7 +48,7 @@ pub trait Manifest: Sized + Resource {
     /// These are commonly [`Bundle`](bevy::ecs::bundle::Bundle) types, allowing you to directly spawn them into the [`World`].
     /// If you wish to store [`Handles`](bevy::asset::Handle) to other assets (such as textures, sprites or sounds),
     /// starting the asset loading process for those assets in [`from_raw_manifest`](Manifest::from_raw_manifest) works very well!
-    type Item: TryFrom<Self::RawItem, Error = Self::ConversionError>;
+    type Item;
 
     /// The error type that can occur when converting raw manifests into a manifest.
     ///
@@ -163,20 +163,6 @@ pub trait MutableManifest: Manifest {
         item: Self::Item,
     ) -> Result<Id<Self::Item>, ManifestModificationError<Self>>;
 
-    /// Converts and then inserts a raw item into the manifest.
-    ///
-    /// This is a convenience method that combines the conversion and insertion steps.
-    fn insert_raw_item(
-        &mut self,
-        raw_item: Self::RawItem,
-    ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
-        let conversion_result = TryFrom::<Self::RawItem>::try_from(raw_item);
-
-        match conversion_result {
-            Ok(item) => self.insert(item),
-            Err(e) => Err(ManifestModificationError::ConversionFailed(e)),
-        }
-    }
     /// Inserts a new item into the manifest by name.
     ///
     /// The item is given a unique identifier, which is returned.
@@ -193,22 +179,6 @@ pub trait MutableManifest: Manifest {
             ))
         } else {
             self.insert(item)
-        }
-    }
-
-    /// Converts and then inserts a raw item into the manifest by name.
-    ///
-    /// This is a convenience method that combines the conversion and insertion steps.
-    fn insert_raw_item_by_name(
-        &mut self,
-        name: &str,
-        raw_item: Self::RawItem,
-    ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
-        let conversion_result = TryFrom::<Self::RawItem>::try_from(raw_item);
-
-        match conversion_result {
-            Ok(item) => self.insert_by_name(name, item),
-            Err(e) => Err(ManifestModificationError::ConversionFailed(e)),
         }
     }
 
