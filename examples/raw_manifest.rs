@@ -38,7 +38,7 @@ struct Item {
 
 /// The raw format for [`Item`] data.
 ///
-/// This is used inside of [`RawManifest`] to be saved/loaded to disk as an [`Asset`].
+/// This is used inside of [`RawItemManifest`] to be saved/loaded to disk as an [`Asset`].
 /// The only difference in this case is that the `sprite` field has been changed from a loaded [`Handle<Image>`] to a [`PathBuf`].
 /// This [`PathBuf`] references the actual sprite path in our assets folder,
 /// but other identifiers could be used for more complex asset loading strategies.
@@ -130,6 +130,7 @@ impl Manifest for ItemManifest {
 
 fn main() {
     App::new()
+        // This example is TUI only, but the default plugins are used because they contain a bunch of asset loading stuff we need.
         .add_plugins(DefaultPlugins)
         // This is our simple state, used to navigate the asset loading process.
         .init_state::<SimpleAssetState>()

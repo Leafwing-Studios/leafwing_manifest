@@ -1,8 +1,10 @@
 //! This example demonstrates the simplest use of the `leafwing_manifest` crate.
 //!
 //! In this example, the manifest and raw manifest are the same type, and the data is read directly from the serialized format on disk into the [`ItemManifest`] resource.
+//!
 //! This pattern is great for simple prototyping and small projects, but can be quickly outgrown as the project's needs scale.
 //! See the other examples for more advanced use cases!
+//! The `raw_manifest.rs` example is a good next step that builds upon this example.
 
 use bevy::{app::AppExit, log::LogPlugin, prelude::*, utils::HashMap};
 use leafwing_manifest::{
@@ -69,7 +71,7 @@ fn main() {
     App::new()
         // leafwing_manifest requires `AssetPlugin` to function
         // This is included in `DefaultPlugins`, but this example is very small, so it only uses the `MinimalPlugins`
-        .add_plugins((MinimalPlugins, LogPlugin::default(), AssetPlugin::default()))
+        .add_plugins((MinimalPlugins, AssetPlugin::default(), LogPlugin::default()))
         // This is our simple state, used to navigate the asset loading process.
         .init_state::<SimpleAssetState>()
         // Coordinates asset loading and state transitions.
