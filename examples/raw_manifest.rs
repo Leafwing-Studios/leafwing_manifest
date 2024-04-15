@@ -77,8 +77,8 @@ impl Manifest for ItemManifest {
     type RawItem = RawItem;
     // Similarly, the manifest types also need to be converted
     type RawManifest = RawItemManifest;
-    // Asset loading always returns a Handle, so our conversion is technically infallable.
-    // Asset loading can still fail further down the pipeline, so this would have to be handled seprately.
+    // Asset loading always returns a Handle, so our conversion is technically infallible.
+    // Asset loading can still fail further down the pipeline, which would have to be handled separately.
     type ConversionError = std::convert::Infallible;
 
     // Our manifest uses a RON file under the hood.
