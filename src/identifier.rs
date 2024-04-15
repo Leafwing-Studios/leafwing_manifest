@@ -53,10 +53,10 @@ impl<T> Id<T> {
         let mut value = 0;
         let mut p_pow = 1;
 
-        name.bytes().for_each(|byte| {
+        for &byte in name.as_bytes() {
             value = (value + (byte as u64 + 1) * p_pow) % HASH_M;
             p_pow = (p_pow * HASH_P) % HASH_M;
-        });
+        }
 
         Id {
             value,
