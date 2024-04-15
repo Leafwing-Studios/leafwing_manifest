@@ -53,6 +53,8 @@ impl<T> Id<T> {
     /// Creates a new ID from human-readable string identifier.
     ///
     /// The ID is created as a non-invertible hash of the string.
+    // TODO: make this a const fn. Feel free to change the hashing algorithm as needed.
+    // Tracked in https://github.com/Leafwing-Studios/leafwing_manifest/issues/19
     pub fn from_name(name: String) -> Self {
         // Algorithm adopted from <https://cp-algorithms.com/string/string-hashing.html>
 
