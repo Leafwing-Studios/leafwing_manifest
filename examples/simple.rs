@@ -91,7 +91,7 @@ fn list_available_items(
     mut app_exit_events: EventWriter<AppExit>,
 ) {
     for (id, item) in item_manifest.items.iter() {
-        println!("{:?}: {:?}", id, item);
+        info!("{:?}: {:?}", id, item);
     }
 
     // We are out of here

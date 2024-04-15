@@ -81,9 +81,6 @@ impl Manifest for ItemManifest {
     // Asset loading can still fail further down the pipeline, which would have to be handled separately.
     type ConversionError = std::convert::Infallible;
 
-    // Our manifest uses a RON file under the hood.
-    // Various common formats are supported out-of-the-box; check the [`ManifestFormat`] docs for more details
-    // and remember to enable the corresponding feature in your `Cargo.toml`!
     const FORMAT: ManifestFormat = ManifestFormat::Ron;
 
     fn get(&self, id: Id<Item>) -> Option<&Self::Item> {
@@ -151,7 +148,7 @@ fn list_available_items(
     mut app_exit_events: EventWriter<AppExit>,
 ) {
     for (id, item) in item_manifest.items.iter() {
-        println!("{:?}: {:?}", id, item);
+        info!("{:?}: {:?}", id, item);
     }
 
     // We are out of here
