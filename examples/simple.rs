@@ -4,7 +4,7 @@
 //! This pattern is great for simple prototyping and small projects, but can be quickly outgrown as the project's needs scale.
 //! See the other examples for more advanced use cases!
 
-use bevy::{app::AppExit, prelude::*, utils::HashMap};
+use bevy::{app::AppExit, log::LogPlugin, prelude::*, utils::HashMap};
 use leafwing_manifest::{
     asset_state::SimpleAssetState,
     identifier::Id,
@@ -69,7 +69,7 @@ fn main() {
     App::new()
         // leafwing_manifest requires `AssetPlugin` to function
         // This is included in `DefaultPlugins`, but this example is very small, so it only uses the `MinimalPlugins`
-        .add_plugins((MinimalPlugins, AssetPlugin::default()))
+        .add_plugins((MinimalPlugins, LogPlugin::default(), AssetPlugin::default()))
         // This is our simple state, used to navigate the asset loading process.
         .init_state::<SimpleAssetState>()
         // Coordinates asset loading and state transitions.
