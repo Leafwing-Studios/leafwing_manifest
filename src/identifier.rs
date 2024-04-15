@@ -87,6 +87,27 @@ impl<T> Id<T> {
             _phantom: PhantomData,
         }
     }
+
+    /// Returns the raw value of the ID.
+    ///
+    /// This is primarily intended for debugging purposes.
+    pub const fn value(&self) -> u64 {
+        self.value
+    }
+
+    /// Constructs a new ID from a raw value.
+    ///
+    /// This is intended only as an escape hatch for advanced use cases.
+    /// In almost every case, you should use [`Id::from_name`] to create IDs.
+    ///
+    /// When constructing `Id`s from raw values, you must ensure that the value is unique.
+    /// Using an atomic counter or a UUID generator are common alternate approaches.
+    pub const fn from_value(value: u64) -> Self {
+        Id {
+            value,
+            _phantom: PhantomData,
+        }
+    }
 }
 
 impl<T> Debug for Id<T> {
