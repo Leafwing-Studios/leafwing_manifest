@@ -14,44 +14,56 @@ exclude = ["assets/**/*", "tools/**/*", ".github/**/*"]
 members = ["./", "tools/ci"]
 
 [dependencies]
-bevy = { version = "0.13", default-features = false, features = ["bevy_asset"] }
-bevy_common_assets = { version = "0.10.0", default-features = false }
+bevy = { version = "0.13", default-features = false, features = [
+	"bevy_asset",
+], optional = true }
+bevy_common_assets = { version = "0.10.0", default-features = false, optional = true }
 serde = "1.0.195"
 thiserror = "1.0.58"
 
 [features]
+# While this library was built for use with Bevy, it does not *need* Bevy to be useful.
 # All file formats are disabled by default: you will typically want to enable
 # only the formats you need. Picking one per project is recommended.
-default = []
+default = ["bevy", "bevy_common_assets"]
 # Support for all file format features
 # Useful for testing
-all_asset_loaders = ["ron", "toml", "yaml", "json", "msgpack", "xml", "csv"]
+all_asset_loaders = [
+	"bevy",
+	"ron",
+	"toml",
+	"yaml",
+	"json",
+	"msgpack",
+	"xml",
+	"csv",
+]
 # Support for the RON file format
 # This is a good choice for most projects, as it is a simple, human-readable and plays nice with enums.
-ron = ["bevy_common_assets/ron"]
+ron = ["bevy", "bevy_common_assets/ron"]
 # Support for the TOML file format
 # This is a straightforward choice for configuration files.
-toml = ["bevy_common_assets/toml"]
+toml = ["bevy", "bevy_common_assets/toml"]
 # Support for the YAML file format
 # This is a relatively common choice for configuration files,
 # and substantially more complex than TOML
-yaml = ["bevy_common_assets/yaml"]
+yaml = ["bevy", "bevy_common_assets/yaml"]
 # Support for the JSON file format
 # JSON is nearly universal, but can be a bit verbose and nitpicky.
 # The key advantage is that it is well-supported by web technologies,
 # and has robust validation tooling.
-json = ["bevy_common_assets/json"]
+json = ["bevy", "bevy_common_assets/json"]
 # Support for the MessagePack file format
 # This is a binary format that is more compact than JSON, but not human-readable.
-msgpack = ["bevy_common_assets/msgpack"]
+msgpack = ["bevy", "bevy_common_assets/msgpack"]
 # Support for the XML file format
 # XML is meaningfully more complex and less compact than JSON,
 # but comes with schemas and validation tools.
-xml = ["bevy_common_assets/xml"]
+xml = ["bevy", "bevy_common_assets/xml"]
 # Support for the CSV file format.
 # This is a great fit for tabular data, but notoriously flaky in edge cases due to the lack of a standard.
 # Good interop with spreadsheet software though!
-csv = ["bevy_common_assets/csv"]
+csv = ["bevy", "bevy_common_assets/csv"]
 
 [dev-dependencies]
 ron = "0.8"
