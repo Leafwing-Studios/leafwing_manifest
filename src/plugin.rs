@@ -39,6 +39,12 @@ impl<S: AssetLoadingState> Plugin for ManifestPlugin<S> {
             .add_systems(
                 Update,
                 check_if_manifests_are_processed::<S>.run_if(in_state(S::PROCESSING)),
+            )
+            // Configure *all* manifest processing systems to run when the app is in the PROCESSING state.
+            // See the `ProcessManifestSet` struct for more information.
+            .configure_sets(
+                PreUpdate,
+                ProcessManifestSet.run_if(in_state(S::PROCESSING)),
             );
     }
 }
@@ -51,6 +57,14 @@ pub trait AppExt {
     /// This must be called for each type of manifest you wish to load.
     fn register_manifest<M: Manifest>(&mut self, path: impl Into<PathBuf>) -> &mut Self;
 }
+
+/// A system set used to configure [`process_manifest`] systems,
+/// regardless of the manifest type being processed.
+///
+/// This pattern is required as we do not have access to the app loading state in `register_manifest`,
+/// and adding an extra generic to it would be cumbersome.
+#[derive(SystemSet, PartialEq, Eq, Hash, Debug, Clone)]
+struct ProcessManifestSet;
 
 impl AppExt for App {
     /// Registers the manifest `M`.
@@ -65,7 +79,9 @@ impl AppExt for App {
             )
             .add_systems(
                 PreUpdate,
-                process_manifest::<M>.run_if(not(resource_exists::<M>)),
+                process_manifest::<M>
+                    .in_set(ProcessManifestSet)
+                    .run_if(not(resource_exists::<M>)),
             );
 
         // Add the asset loader to the app via `bevy_common_assets`.
