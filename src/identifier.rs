@@ -45,22 +45,47 @@ impl<T> Id<T> {
     /// Creates a new ID from human-readable string identifier.
     ///
     /// The ID is created as a non-invertible hash of the string.
-    // TODO: make this a const fn. Feel free to change the hashing algorithm as needed.
-    // Tracked in https://github.com/Leafwing-Studios/leafwing_manifest/issues/19
-    pub fn from_name(name: &str) -> Self {
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use leafwing_manifest::identifier::Id;
+    ///
+    /// // The marker type for the objects we're identifying.
+    /// struct GameEngine;
+    ///
+    /// // When possible, prefer const IDs to avoid runtime hashing.
+    /// const BEVY: Id<GameEngine> = Id::from_name("bevy");
+    /// let bavy: Id<GameEngine> = Id::from_name("bavy");
+    ///
+    /// // Hashing a given string will always produce the same ID.
+    /// assert_eq!(BEVY, Id::from_name("bevy"));
+    /// // But hashing a different string will produce a different ID.
+    /// assert!(BEVY != bavy);
+    /// ```
+    pub const fn from_name(name: &str) -> Self {
         // Algorithm adopted from <https://cp-algorithms.com/string/string-hashing.html>
 
         let mut value = 0;
         let mut p_pow = 1;
 
-        for &byte in name.as_bytes() {
+        // BLOCKED: this should just be a for loop over name.as_bytes, but they aren't allowed in const fns yet.
+        // see <https://github.com/rust-lang/rust/issues/87575> for more information
+        let byte_slice = name.as_bytes();
+        let mut end_of_bytes = byte_slice.is_empty();
+        let mut byte_index = 0;
+
+        while !end_of_bytes {
+            let byte = byte_slice[byte_index];
             value = (value + (byte as u64 + 1) * p_pow) % HASH_M;
             p_pow = (p_pow * HASH_P) % HASH_M;
+            byte_index += 1;
+            end_of_bytes = byte_index == byte_slice.len();
         }
 
         Id {
             value,
-            _phantom: PhantomData::default(),
+            _phantom: PhantomData,
         }
     }
 }
