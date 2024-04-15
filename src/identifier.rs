@@ -42,14 +42,6 @@ const HASH_P: u64 = 53;
 const HASH_M: u64 = 1_000_000_009;
 
 impl<T> Id<T> {
-    /// Create a new identifier from the given unique number.
-    const fn new(value: u64) -> Self {
-        Self {
-            value,
-            _phantom: PhantomData,
-        }
-    }
-
     /// Creates a new ID from human-readable string identifier.
     ///
     /// The ID is created as a non-invertible hash of the string.
@@ -66,7 +58,10 @@ impl<T> Id<T> {
             p_pow = (p_pow * HASH_P) % HASH_M;
         });
 
-        Self::new(value)
+        Id {
+            value,
+            _phantom: PhantomData::default(),
+        }
     }
 }
 
