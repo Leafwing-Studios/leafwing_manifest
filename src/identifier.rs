@@ -54,7 +54,7 @@ impl<T> Id<T> {
     /// // The marker type for the objects we're identifying.
     /// struct GameEngine;
     ///
-    /// // When possible, prefer const IDs to avoid runtime hashing.
+    /// // When possible, prefer const IDs to avoid unnecessary duplication.
     /// const BEVY: Id<GameEngine> = Id::from_name("bevy");
     /// let bavy: Id<GameEngine> = Id::from_name("bavy");
     ///
@@ -91,6 +91,7 @@ impl<T> Id<T> {
 
     /// Returns the raw value of the ID.
     ///
+    /// Internally, [`u64`] is the backing type for all [`Id<T>`]s.
     /// This is primarily intended for debugging purposes.
     #[must_use]
     pub const fn raw(&self) -> u64 {
@@ -99,10 +100,11 @@ impl<T> Id<T> {
 
     /// Constructs a new ID from a raw value.
     ///
-    /// This is intended only as an escape hatch for advanced use cases.
+    /// Internally, [`u64`] is the backing type for all [`Id<T>`]s.
+    /// This method is intended only as an escape hatch for advanced use cases.
     /// In almost every case, you should use [`Id::from_name`] to create IDs.
     ///
-    /// When constructing `Id`s from raw values, you must ensure that the value is unique.
+    /// When constructing [`Id`]s from raw values, you must ensure that the value is unique for a given manifest.
     /// Using an atomic counter or a UUID generator are common alternate approaches.
     #[must_use]
     pub const fn from_raw(value: u64) -> Self {
