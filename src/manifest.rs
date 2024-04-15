@@ -94,8 +94,8 @@ pub trait Manifest: Sized + Resource {
     /// Gets an item from the manifest by its name.
     ///
     /// Returns [`None`] if no item with the given name is found.
-    fn get_by_name(&self, name: &str) -> Option<&Self::Item> {
-        self.get(Id::from_name(name))
+    fn get_by_name(&self, name: impl Into<String>) -> Option<&Self::Item> {
+        self.get(Id::from_name(name.into()))
     }
 }
 
@@ -198,13 +198,15 @@ pub trait MutableManifest: Manifest {
     /// The item is given a unique identifier, which is returned.
     fn insert_by_name(
         &mut self,
-        name: &str,
+        name: impl Into<String>,
         item: Self::Item,
     ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
-        let id = Id::from_name(name.to_string());
+        let name = name.into();
+
+        let id = Id::from_name(name.clone());
 
         if self.get(id).is_some() {
-            Err(ManifestModificationError::DuplicateName(name.to_string()))
+            Err(ManifestModificationError::DuplicateName(name))
         } else {
             self.insert(item)
         }
@@ -239,9 +241,9 @@ pub trait MutableManifest: Manifest {
     /// The item removed is returned, if it was found.
     fn remove_by_name(
         &mut self,
-        name: &str,
+        name: impl Into<String>,
     ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
-        self.remove(&Id::from_name(name))
+        self.remove(&Id::from_name(name.into()))
     }
 
     /// Gets a mutable reference to an item from the manifest by its unique identifier.
@@ -252,8 +254,8 @@ pub trait MutableManifest: Manifest {
     /// Gets a mutable reference to an item from the manifest by its name.
     ///
     /// Returns [`None`] if no item with the given name is found.
-    fn get_mut_by_name(&mut self, name: &str) -> Option<&mut Self::Item> {
-        self.get_mut(Id::from_name(name))
+    fn get_mut_by_name(&mut self, name: impl Into<String>) -> Option<&mut Self::Item> {
+        self.get_mut(Id::from_name(name.into()))
     }
 }
 
