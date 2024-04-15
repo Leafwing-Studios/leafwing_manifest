@@ -16,7 +16,7 @@ That manifest is then used to spawn and look up the properties of specific kinds
 
 To get started:
 
-1. Add an asset loading state that implements `AssetState` to your app that handles the lifecycle of loading assets.
+1. Add an asset loading state that implements `AssetState` (like the `SimpleAssetState` that we ship) to your app that handles the lifecycle of loading assets.
 2. Add `ManifestPlugin<S: AssetState>` to your `App`.
 3. Create a struct (e.g. `Monster`) that stores the final data that you want to share between all objects of the same kind.
 4. Put your game design hat on and define each monster's life, level, name and so on in a serialized format like RON.
