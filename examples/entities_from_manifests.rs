@@ -20,7 +20,7 @@ use leafwing_manifest::{
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct RawTile {
     name: String,
     /// An RGB color in float form.
@@ -40,7 +40,7 @@ pub struct Tile {
     tile_type: TileType,
 }
 
-#[derive(Component, Serialize, Deserialize, Clone, Copy)]
+#[derive(Component, Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 enum TileType {
     City,
     Water,
@@ -88,7 +88,7 @@ impl TileBundle {
     }
 }
 
-#[derive(Asset, Serialize, Deserialize, TypePath)]
+#[derive(Asset, Serialize, Deserialize, TypePath, Debug, PartialEq)]
 pub struct RawTileManifest {
     tiles: Vec<RawTile>,
 }
@@ -146,6 +146,9 @@ impl Manifest for TileManifest {
 }
 
 pub fn spawn_tiles(mut commands: Commands, tile_manifest: Res<TileManifest>) {
+    // Remember to add the camera bundle to the world, or you won't see anything!
+    commands.spawn(Camera2dBundle::default());
+
     for (i, tile) in tile_manifest.tiles.values().enumerate() {
         // Space out the spawned tiles for demonstration purposes.
         let translation = Vec3::X * i as f32;
@@ -161,6 +164,55 @@ fn main() {
         .init_state::<SimpleAssetState>()
         .add_plugins(ManifestPlugin::<SimpleAssetState>::default())
         .register_manifest::<TileManifest>("tiles.ron")
-        .add_systems(Startup, spawn_tiles)
+        .add_systems(
+            Startup,
+            spawn_tiles.run_if(in_state(SimpleAssetState::Ready)),
+        )
         .run();
+}
+
+/// This module is used to generate the tile manifest.
+///
+/// While manifests *can* be hand-authored, it's often more convenient to generate them using tooling of some kind.
+/// Serde's [`Serialize`] and [`Deserialize`] traits are a good fit for this purpose.
+/// `ron` is a straightforward human-readable format that plays well with Rust's type system, and is a good point to start.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generate_raw_item_manifest() {
+        let mut raw_tile_manifest = RawTileManifest {
+            tiles: Vec::default(),
+        };
+
+        raw_tile_manifest.tiles.push(RawTile {
+            name: "Gotham".to_string(),
+            color: [0.0, 1.0, 0.0],
+            tile_type: TileType::City,
+        });
+
+        raw_tile_manifest.tiles.push(RawTile {
+            name: "River".to_string(),
+            color: [0.0, 0.0, 1.0],
+            tile_type: TileType::Water,
+        });
+
+        raw_tile_manifest.tiles.push(RawTile {
+            name: "Dark Forest".to_string(),
+            color: [1.0, 0.0, 0.0],
+            tile_type: TileType::Wilderness,
+        });
+
+        let serialized =
+            ron::ser::to_string_pretty(&raw_tile_manifest, Default::default()).unwrap();
+        println!("{}", serialized);
+
+        // Save the results, to ensure that our example has a valid manifest to read.
+        std::fs::write("assets/tiles.ron", &serialized).unwrap();
+
+        let deserialized: RawTileManifest = ron::de::from_str(&serialized).unwrap();
+
+        assert_eq!(raw_tile_manifest, deserialized);
+    }
 }
