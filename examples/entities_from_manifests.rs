@@ -11,7 +11,7 @@
 //! If you need to spawn a scene hierarchy (such as for levels or 3D models), storing a handle to that scene can work well,
 //! or a scene bundle can be added to your custom bundle type.
 
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{prelude::*, sprite::Mesh2dHandle, utils::HashMap};
 use leafwing_manifest::{
     asset_state::SimpleAssetState,
     identifier::Id,
@@ -30,13 +30,14 @@ pub struct RawTile {
     tile_type: TileType,
 }
 
+#[derive(Debug)]
 pub struct Tile {
     name: String,
     // We convert the supplied u32 color into a `ColorMaterial` during manifest processing.
     color_material: Handle<ColorMaterial>,
     // The same square mesh is used for all tiles,
     // and can be procedurally generated during .
-    mesh: Handle<Mesh>,
+    mesh: Mesh2dHandle,
     tile_type: TileType,
 }
 
@@ -56,11 +57,9 @@ pub struct TileBundle {
     id: Id<Tile>,
     tile_type: TileType,
     material: Handle<ColorMaterial>,
-    mesh: Handle<Mesh>,
-    visibility: Visibility,
-    inherited_visibility: InheritedVisibility,
-    transform: Transform,
-    global_transform: GlobalTransform,
+    mesh: Mesh2dHandle,
+    // Add all of the components needed to render the tile.
+    spatial_bundle: SpatialBundle,
 }
 
 impl TileBundle {
@@ -79,11 +78,8 @@ impl TileBundle {
             // While the value of the mesh is the same for all tiles, passing around `&Assets<Mesh>` everywhere
             // is miserable. Instead, we sacrifice a little bit of memory to redundantly store the mesh handle in the manifest:
             // like always, the mesh itself is only stored once in the asset storage.
-            mesh: tile.mesh.clone_weak(),
-            visibility: Default::default(),
-            inherited_visibility: Default::default(),
-            transform,
-            global_transform: Default::default(),
+            mesh: tile.mesh.clone(),
+            spatial_bundle: SpatialBundle::from_transform(transform),
         }
     }
 }
@@ -116,6 +112,8 @@ impl Manifest for TileManifest {
     ) -> Result<Self, Self::ConversionError> {
         let mut meshes = world.resource_mut::<Assets<Mesh>>();
         let mesh = meshes.add(Mesh::from(Rectangle::new(1.0, 1.0)));
+        // This is a thin wrapper around a `Handle<Mesh>`, used in 2D rendering.
+        let mesh_2d = Mesh2dHandle::from(mesh.clone());
 
         let mut color_materials = world.resource_mut::<Assets<ColorMaterial>>();
 
@@ -135,7 +133,7 @@ impl Manifest for TileManifest {
                     color_material,
                     // We need to store strong handles here: otherwise the procedural mesh will be dropped immediately
                     // when the original declaration goes out of scope.
-                    mesh: mesh.clone(),
+                    mesh: mesh_2d.clone(),
                     tile_type: raw_tile.tile_type,
                 },
             );
@@ -146,13 +144,22 @@ impl Manifest for TileManifest {
 }
 
 pub fn spawn_tiles(mut commands: Commands, tile_manifest: Res<TileManifest>) {
+    // 2D camera scales are measured in pixels per unit.
+    const SCALE: f32 = 128.;
+    // Space the tiles out a bit.
+    const SPACING: f32 = 1.5;
+
+    info!("Spawning tiles...");
+
     // Remember to add the camera bundle to the world, or you won't see anything!
     commands.spawn(Camera2dBundle::default());
 
     for (i, tile) in tile_manifest.tiles.values().enumerate() {
+        info!("{:?}", tile);
+
         // Space out the spawned tiles for demonstration purposes.
-        let translation = Vec3::X * i as f32;
-        let transform = Transform::from_translation(translation);
+        let translation = Vec3::X * i as f32 * SCALE * SPACING;
+        let transform = Transform::from_translation(translation).with_scale(Vec3::splat(SCALE));
 
         commands.spawn(TileBundle::new(transform, tile));
     }
@@ -164,10 +171,7 @@ fn main() {
         .init_state::<SimpleAssetState>()
         .add_plugins(ManifestPlugin::<SimpleAssetState>::default())
         .register_manifest::<TileManifest>("tiles.ron")
-        .add_systems(
-            Startup,
-            spawn_tiles.run_if(in_state(SimpleAssetState::Ready)),
-        )
+        .add_systems(OnEnter(SimpleAssetState::Ready), spawn_tiles)
         .run();
 }
 
