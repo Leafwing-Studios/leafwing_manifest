@@ -1,0 +1,19 @@
+(
+    tiles: [
+        (
+            name: "Gotham",
+            color: (0.0, 1.0, 0.0),
+            tile_type: City,
+        ),
+        (
+            name: "River",
+            color: (0.0, 0.0, 1.0),
+            tile_type: Water,
+        ),
+        (
+            name: "Dark Forest",
+            color: (1.0, 0.0, 0.0),
+            tile_type: Wilderness,
+        ),
+    ],
+)

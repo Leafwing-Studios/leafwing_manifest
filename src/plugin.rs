@@ -271,6 +271,7 @@ pub fn check_if_manifests_are_processed<S: AssetLoadingState>(
     if raw_manifest_tracker.processing_status() == ProcessingStatus::Failed {
         next_state.set(S::FAILED);
     } else if raw_manifest_tracker.processing_status() == ProcessingStatus::Ready {
+        info!("All manifests have been processed successfully.");
         next_state.set(S::READY);
     }
 }
@@ -300,7 +301,8 @@ pub fn process_manifest<M: Manifest>(
     world: &mut World,
     system_state: &mut SystemState<(Res<RawManifestTracker>, ResMut<Assets<M::RawManifest>>)>,
 ) {
-    info!("Process manifest");
+    info!("Processing manifest of type {}.", type_name::<M>());
+
     let (raw_manifest_tracker, mut assets) = system_state.get_mut(world);
     let Some(status) = raw_manifest_tracker.status::<M>() else {
         error_once!(
