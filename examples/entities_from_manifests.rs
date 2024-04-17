@@ -155,7 +155,7 @@ pub fn spawn_tiles(mut commands: Commands, tile_manifest: Res<TileManifest>) {
     commands.spawn(Camera2dBundle::default());
 
     for (i, tile) in tile_manifest.tiles.values().enumerate() {
-        info!("{:?}", tile);
+        info!("Spawning tile: {:?}", tile);
 
         // Space out the spawned tiles for demonstration purposes.
         let translation = Vec3::X * i as f32 * SCALE * SPACING;
