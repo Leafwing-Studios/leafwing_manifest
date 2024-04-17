@@ -15,7 +15,7 @@ use bevy_common_assets::ron::RonLoaderError;
 use leafwing_manifest::manifest::Manifest;
 use manifest_definition::{ItemManifest, RawItemManifest};
 
-/// The core data structures and [`Manifest`] implementation is stolen directly from raw.rs:
+/// The core data structures and [`Manifest`] implementation is stolen directly from raw_manifest.rs:
 /// it's not the focus of this example!
 mod manifest_definition {
     use std::path::PathBuf;
@@ -144,10 +144,10 @@ impl AssetLoader for ItemAssetLoader {
     }
 }
 
-// The same basic workflow applies when managing manifests manually, but you have more control over the process.:
+// The same basic workflow applies when managing manifests manually, but you have more control over the process:
 // 1. Start loading the raw manifest
 // 2. Wait for the raw manifest to load
-// 3. Convert it into a usable form
+// 3. Convert it into a usable (non-raw manifest) form
 // 4. Store it as a resource
 #[derive(Debug, PartialEq, Default)]
 enum ManifestProgress {
