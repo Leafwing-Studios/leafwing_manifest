@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Leafwing Studios"]
 homepage = "https://leafwing-studios.com/"
 repository = "https://github.com/leafwing-studios/leafwing_manifest"
+description = " A flexible crate for managing game assets that share a common structure. Manifests are generated from on-disk data, and offer a straightforward way to quickly look-up and generate game objects."
 license = "MIT OR Apache-2.0"
 edition = "2021"
 categories = ["games", "game-development"]
