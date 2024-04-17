@@ -16,10 +16,10 @@ use crate::manifest::Manifest;
 /// This plugin will add the required state to your app (starting in [`AssetLoadingState::LOADING`]),
 /// and set up the required systems to progress through the asset loading process and parse any added manifests.
 ///
-/// Note that manifests must be added to the app manually, using the [`app.register_manifest`](crate::plugin::AppExt::register_manifest) method.
+/// Note that manifests must be added to the app manually, using the [`app.register_manifest`](crate::plugin::RegisterManifest::register_manifest) method.
 /// This plugin **must** be added before manifests are registered.
 ///
-/// While [`register_manifest`](crate::plugin::AppExt::register_manifest) must be called for each manifest type you wish to use,
+/// While [`register_manifest`](crate::plugin::RegisterManifest::register_manifest) must be called for each manifest type you wish to use,
 /// this plugin should only be added a single time.
 ///
 /// This plugin is intenionally optional: if you have more complex asset loading requirements, take a look at the systems in this plugin and either add or reimplement them as needed.
@@ -71,7 +71,7 @@ impl<S: AssetLoadingState> Plugin for ManifestPlugin<S> {
 }
 
 /// An extension trait for registering manifests with an app.
-pub trait AppExt {
+pub trait RegisterManifest {
     /// Registers a manifest with the app, preparing it for loading and parsing.
     ///
     /// The final manifest type must implement [`Manifest`], while the raw manifest type must implement [`Asset`](bevy::asset::Asset).
@@ -87,7 +87,7 @@ pub trait AppExt {
 #[derive(SystemSet, PartialEq, Eq, Hash, Debug, Clone)]
 struct ProcessManifestSet;
 
-impl AppExt for App {
+impl RegisterManifest for App {
     /// Registers the manifest `M`.
     ///
     /// By default, the path root is the `assets` folder, just like all Bevy assets.
