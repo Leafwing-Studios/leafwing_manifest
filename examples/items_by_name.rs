@@ -9,6 +9,8 @@
 //!
 //! This example shows how to use manifests to create a simple system for working with manifest entries by name,
 //! although the same principles can be used to manipulate manifests if using the [`MutableManifest`] trait as well.
+//!
+//! This code is largely copied from the `simple.rs` example: we're just adding constants and a new system to demonstrate the name-based lookups.
 
 use bevy::{log::LogPlugin, prelude::*, utils::HashMap};
 use leafwing_manifest::{
@@ -28,7 +30,6 @@ use serde::{Deserialize, Serialize};
 const SWORD: Id<Item> = Id::from_name("sword");
 const SHIELD: Id<Item> = Id::from_name("shield");
 
-/// The data for as single item that might be held in the player's inventory.
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[allow(dead_code)] // Properties are for demonstration purposes only.
 struct Item {
@@ -39,7 +40,6 @@ struct Item {
     max_stack: u8,
 }
 
-/// A data-driven manifest, which contains the canonical data for all the items in the game.
 #[derive(Debug, Resource, Asset, TypePath, Serialize, Deserialize, PartialEq)]
 struct ItemManifest {
     items: HashMap<Id<Item>, Item>,
