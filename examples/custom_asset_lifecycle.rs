@@ -6,7 +6,12 @@
 //! As this example demonstrates, you can bypass the [`ManifestPlugin`](leafwing_manifest::plugin::ManifestPlugin) entirely, and load your assets however you like,
 //! calling the publicly exposed methods yourself to replicate the work it does.
 
-use bevy::{asset::LoadState, prelude::*};
+use bevy::{
+    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext, LoadState},
+    prelude::*,
+    utils::BoxedFuture,
+};
+use bevy_common_assets::ron::RonLoaderError;
 use leafwing_manifest::manifest::Manifest;
 use manifest_definition::{ItemManifest, RawItemManifest};
 
@@ -100,11 +105,46 @@ mod manifest_definition {
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        // Check out this system for all the fancy state management
         .add_systems(PreUpdate, manage_manifests)
+        // Remember to initialize your asset types!
+        .init_asset::<RawItemManifest>()
+        // Remember to add the required asset loaders!
+        .register_asset_loader(ItemAssetLoader)
         .run();
 }
 
-// The same basic workflow applies:
+// Writing your own asset loaders is quite a bit of boilerplate:
+// you need a unique asset loader for each manifest type you want to load.
+// Many thanks to bevy_common_assets for showing us how to do this!
+struct ItemAssetLoader;
+
+impl AssetLoader for ItemAssetLoader {
+    type Asset = RawItemManifest;
+    type Settings = ();
+    type Error = RonLoaderError;
+
+    fn load<'a>(
+        &'a self,
+        reader: &'a mut Reader,
+        _settings: &'a Self::Settings,
+        _load_context: &'a mut LoadContext,
+    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
+        Box::pin(async move {
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes).await?;
+            let asset = ron::de::from_bytes::<RawItemManifest>(&bytes)?;
+            Ok(asset)
+        })
+    }
+
+    // The extensions method is ultimately used as a fallback: it isn't helpful for our workflow.
+    fn extensions(&self) -> &[&str] {
+        &[]
+    }
+}
+
+// The same basic workflow applies when managing manifests manually, but you have more control over the process.:
 // 1. Start loading the raw manifest
 // 2. Wait for the raw manifest to load
 // 3. Convert it into a usable form
@@ -120,7 +160,7 @@ enum ManifestProgress {
 
 /// Handles the entire lifecycle of the manifest.
 ///
-/// This is a tiny simple systems for simplicity: the core steps can be arranged however you'd like.
+/// This is done here with a tiny and pretty janky single system for simplicity: the core steps can be arranged however you'd like.
 /// See the source code of the [`plugin`](leafwing_manifest::plugin) module for further inspiration.
 fn manage_manifests(
     mut progress: Local<ManifestProgress>,
@@ -128,6 +168,7 @@ fn manage_manifests(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     raw_manifest_assets: Res<Assets<RawItemManifest>>,
+    maybe_final_manifest: Option<Res<ItemManifest>>,
 ) {
     match *progress {
         // Step 1: Start loading the raw manifest.
@@ -175,7 +216,11 @@ fn manage_manifests(
             });
             *progress = ManifestProgress::Processed;
         }
-        // All done: no more work to do!
-        ManifestProgress::Processed => (),
+        // Let's double check that this worked!
+        ManifestProgress::Processed => {
+            if let Some(final_manifest) = maybe_final_manifest {
+                info_once!("Final manifest is ready: {:?}", final_manifest);
+            }
+        }
     }
 }
