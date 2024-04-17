@@ -5,7 +5,7 @@ use bevy::app::{App, Plugin, PreUpdate, Update};
 use bevy::asset::{AssetApp, AssetLoadFailedEvent, AssetServer, Assets, LoadState, UntypedHandle};
 use bevy::ecs::prelude::*;
 use bevy::ecs::system::SystemState;
-use bevy::log::{error_once, info};
+use bevy::log::{error, error_once, info};
 use bevy::utils::HashMap;
 
 use crate::asset_state::AssetLoadingState;
@@ -23,29 +23,50 @@ use crate::manifest::Manifest;
 /// this plugin should only be added a single time.
 ///
 /// This plugin is intenionally optional: if you have more complex asset loading requirements, take a look at the systems in this plugin and either add or reimplement them as needed.
-#[derive(Debug, Default)]
-pub struct ManifestPlugin<S: States> {
-    _phantom: std::marker::PhantomData<S>,
+#[derive(Debug)]
+pub struct ManifestPlugin<S: AssetLoadingState> {
+    /// If true, the app will automatically transition between asset loading states as manifests load.
+    /// If false, you must manually transition between states using the [`NextState`] resource.
+    ///
+    /// Defaults to `true`.
+    ///
+    /// If you want to coordinate with other asset loading steps, you may want to set this to `false`
+    /// and handle asset state management on your own.
+    pub automatically_advance_states: bool,
+    /// A phantom data field to satisfy the type system.
+    pub _phantom: std::marker::PhantomData<S>,
+}
+
+impl Default for ManifestPlugin<crate::asset_state::SimpleAssetState> {
+    fn default() -> Self {
+        Self {
+            automatically_advance_states: true,
+            _phantom: std::marker::PhantomData,
+        }
+    }
 }
 
 impl<S: AssetLoadingState> Plugin for ManifestPlugin<S> {
     fn build(&self, app: &mut App) {
         app.insert_state(S::LOADING)
             .init_resource::<RawManifestTracker>()
-            .add_systems(
-                Update,
-                check_if_manifests_have_loaded::<S>.run_if(in_state(S::LOADING)),
-            )
-            .add_systems(
-                Update,
-                check_if_manifests_are_processed::<S>.run_if(in_state(S::PROCESSING)),
-            )
             // Configure *all* manifest processing systems to run when the app is in the PROCESSING state.
             // See the `ProcessManifestSet` struct for more information.
             .configure_sets(
                 PreUpdate,
                 ProcessManifestSet.run_if(in_state(S::PROCESSING)),
             );
+
+        if self.automatically_advance_states {
+            app.add_systems(
+                Update,
+                check_if_manifests_have_loaded::<S>.run_if(in_state(S::LOADING)),
+            )
+            .add_systems(
+                Update,
+                check_if_manifests_are_processed::<S>.run_if(in_state(S::PROCESSING)),
+            );
+        }
     }
 }
 
@@ -256,8 +277,10 @@ pub fn check_if_manifests_have_loaded<S: AssetLoadingState>(
     mut next_state: ResMut<NextState<S>>,
 ) {
     if raw_manifest_tracker.any_manifests_failed(asset_server.as_ref()) {
+        error!("Some manifests failed to load.");
         next_state.set(S::FAILED);
     } else if raw_manifest_tracker.all_manifests_loaded(asset_server.as_ref()) {
+        info!("All manifests have been loaded successfully.");
         next_state.set(S::PROCESSING);
     }
 }
@@ -269,6 +292,7 @@ pub fn check_if_manifests_are_processed<S: AssetLoadingState>(
     mut next_state: ResMut<NextState<S>>,
 ) {
     if raw_manifest_tracker.processing_status() == ProcessingStatus::Failed {
+        error!("Some manifests failed during processing.");
         next_state.set(S::FAILED);
     } else if raw_manifest_tracker.processing_status() == ProcessingStatus::Ready {
         info!("All manifests have been processed successfully.");
