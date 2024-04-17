@@ -16,7 +16,7 @@ use leafwing_manifest::{
     asset_state::SimpleAssetState,
     identifier::Id,
     manifest::{Manifest, ManifestFormat},
-    plugin::{AppExt, ManifestPlugin},
+    plugin::{ManifestPlugin, RegisterManifest},
 };
 use serde::{Deserialize, Serialize};
 

@@ -50,7 +50,7 @@ impl<S: AssetLoadingState> Plugin for ManifestPlugin<S> {
 }
 
 /// An extension trait for registering manifests with an app.
-pub trait AppExt {
+pub trait RegisterManifest {
     /// Registers a manifest with the app, preparing it for loading and parsing.
     ///
     /// The final manifest type must implement [`Manifest`], while the raw manifest type must implement [`Asset`](bevy::asset::Asset).
@@ -66,7 +66,7 @@ pub trait AppExt {
 #[derive(SystemSet, PartialEq, Eq, Hash, Debug, Clone)]
 struct ProcessManifestSet;
 
-impl AppExt for App {
+impl RegisterManifest for App {
     /// Registers the manifest `M`.
     ///
     /// By default, the path root is the `assets` folder, just like all Bevy assets.
