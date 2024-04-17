@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{borrow::Borrow, error::Error};
 
 use bevy::{
     asset::Asset,
@@ -96,8 +96,8 @@ pub trait Manifest: Sized + Resource {
     ///
     /// Returns [`None`] if no item with the given name is found.
     #[must_use]
-    fn get_by_name(&self, name: impl AsRef<String>) -> Option<&Self::Item> {
-        self.get(Id::from_name(name.as_ref()))
+    fn get_by_name(&self, name: impl Borrow<str>) -> Option<&Self::Item> {
+        self.get(Id::from_name(name.borrow()))
     }
 }
 
@@ -168,14 +168,14 @@ pub trait MutableManifest: Manifest {
     /// The item is given a unique identifier, which is returned.
     fn insert_by_name(
         &mut self,
-        name: impl AsRef<str>,
+        name: impl Borrow<str>,
         item: Self::Item,
     ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
-        let id = Id::from_name(name.as_ref());
+        let id = Id::from_name(name.borrow());
 
         if self.get(id).is_some() {
             Err(ManifestModificationError::DuplicateName(
-                name.as_ref().to_string(),
+                name.borrow().to_string(),
             ))
         } else {
             self.insert(item)
@@ -195,9 +195,9 @@ pub trait MutableManifest: Manifest {
     /// The item removed is returned, if it was found.
     fn remove_by_name(
         &mut self,
-        name: impl AsRef<str>,
+        name: impl Borrow<str>,
     ) -> Result<Id<Self::Item>, ManifestModificationError<Self>> {
-        self.remove(&Id::from_name(name.as_ref()))
+        self.remove(&Id::from_name(name.borrow()))
     }
 
     /// Gets a mutable reference to an item from the manifest by its unique identifier.
@@ -210,8 +210,8 @@ pub trait MutableManifest: Manifest {
     ///
     /// Returns [`None`] if no item with the given name is found.
     #[must_use]
-    fn get_mut_by_name(&mut self, name: impl AsRef<str>) -> Option<&mut Self::Item> {
-        self.get_mut(Id::from_name(name.as_ref()))
+    fn get_mut_by_name(&mut self, name: impl Borrow<str>) -> Option<&mut Self::Item> {
+        self.get_mut(Id::from_name(name.borrow()))
     }
 }
 
