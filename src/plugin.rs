@@ -158,7 +158,7 @@ impl RegisterManifest for App {
             crate::manifest::ManifestFormat::Custom => (), // Users must register their own asset loader for custom formats.
         }
 
-        self.world()
+        self.world_mut()
             .resource_scope(|world, mut asset_server: Mut<AssetServer>| {
                 let mut manifest_tracker = world.resource_mut::<RawManifestTracker>();
                 manifest_tracker.register::<M>(path, asset_server.as_mut());
