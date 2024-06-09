@@ -1,6 +1,6 @@
 [package]
 name = "leafwing_manifest"
-version = "0.1.0"
+version = "0.2.0-rc.2"
 authors = ["Leafwing Studios"]
 homepage = "https://leafwing-studios.com/"
 repository = "https://github.com/leafwing-studios/leafwing_manifest"
@@ -15,7 +15,9 @@ exclude = ["assets/**/*", "tools/**/*", ".github/**/*"]
 members = ["./", "tools/ci"]
 
 [dependencies]
-bevy = { version = "0.13", default-features = false, features = ["bevy_asset"] }
+bevy = { version = "0.14.0-rc.2", default-features = false, features = [
+	"bevy_asset",
+] }
 bevy_common_assets = { version = "0.10.0", default-features = false }
 serde = "1.0.195"
 thiserror = "1.0.58"
