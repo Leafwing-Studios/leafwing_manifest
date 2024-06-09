@@ -208,9 +208,8 @@ fn manage_manifests(
 
             // We're deferring the actual work with commands to avoid blocking the whole world
             // every time this system runs.
-            commands.add(|mut world: &mut World| {
-                let item_manifest =
-                    ItemManifest::from_raw_manifest(raw_manifest, &mut world).unwrap();
+            commands.add(|world: &mut World| {
+                let item_manifest = ItemManifest::from_raw_manifest(raw_manifest, world).unwrap();
 
                 world.insert_resource(item_manifest);
             });
