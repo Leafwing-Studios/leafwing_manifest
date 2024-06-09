@@ -237,7 +237,7 @@ impl RawManifestTracker {
         for status in self.raw_manifests.values_mut() {
             status.load_state = asset_server
                 .get_load_state(&status.handle)
-                .unwrap_or(todo!());
+                .expect("Handle did not correspond to an asset queued for loading.");
         }
     }
 
