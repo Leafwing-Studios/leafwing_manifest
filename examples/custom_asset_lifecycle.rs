@@ -192,8 +192,8 @@ fn manage_manifests(
                 // We're still waiting for the asset to load
                 LoadState::NotLoaded | LoadState::Loading => (),
                 // Something went wrong: panic!
-                LoadState::Failed => {
-                    panic!("Failed to load manifest");
+                LoadState::Failed(err) => {
+                    panic!("Failed to load manifest: {}", err);
                 }
             }
         }
