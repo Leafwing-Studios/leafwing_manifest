@@ -19,7 +19,7 @@ bevy = { version = "0.14.0-rc.2", default-features = false, features = [
 	"bevy_asset",
 	"bevy_state",
 ] }
-bevy_common_assets = { version = "0.10.0", default-features = false }
+bevy_common_assets = { git = "https://github.com/alice-i-cecile/bevy_common_assets/tree/rc2", default-features = false }
 serde = "1.0.195"
 thiserror = "1.0.58"
 
