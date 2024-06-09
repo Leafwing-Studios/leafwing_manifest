@@ -124,7 +124,7 @@ impl Manifest for TileManifest {
             // driven by hand-tuned parameters in the manifest.
             // In a real game, you might use a more complex system to generate the assets,
             // but the general pattern is very effective for creating cohesive but varied content.
-            let color_material = color_materials.add(Color::rgb_from_array(raw_tile.color));
+            let color_material = color_materials.add(Color::srgb_from_array(raw_tile.color));
 
             manifest.tiles.insert(
                 Id::from_name(&raw_tile.name),
