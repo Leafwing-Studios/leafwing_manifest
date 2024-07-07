@@ -1,4 +1,4 @@
-# leafwing_manifest
+# Leafwing Manifest
 
 `leafwing_manifest` is a straightforward, opinionated tool to transform "assets on disk" into flexible, robust objects inside of your Bevy game.
 There are four key concepts:
