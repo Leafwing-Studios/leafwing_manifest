@@ -6,6 +6,9 @@ use bevy::asset::{AssetApp, AssetLoadFailedEvent, AssetServer, Assets, LoadState
 use bevy::ecs::prelude::*;
 use bevy::ecs::system::SystemState;
 use bevy::log::{error, error_once, info};
+use bevy::state::app::AppExtStates;
+use bevy::state::condition::in_state;
+use bevy::state::state::NextState;
 use bevy::utils::HashMap;
 
 use crate::asset_state::AssetLoadingState;
@@ -155,7 +158,7 @@ impl RegisterManifest for App {
             crate::manifest::ManifestFormat::Custom => (), // Users must register their own asset loader for custom formats.
         }
 
-        self.world
+        self.world_mut()
             .resource_scope(|world, mut asset_server: Mut<AssetServer>| {
                 let mut manifest_tracker = world.resource_mut::<RawManifestTracker>();
                 manifest_tracker.register::<M>(path, asset_server.as_mut());
@@ -233,8 +236,8 @@ impl RawManifestTracker {
     pub fn update_load_states(&mut self, asset_server: &AssetServer) {
         for status in self.raw_manifests.values_mut() {
             status.load_state = asset_server
-                .get_load_state(status.handle.clone_weak())
-                .unwrap_or(LoadState::Failed);
+                .get_load_state(&status.handle)
+                .expect("Handle did not correspond to an asset queued for loading.");
         }
     }
 
@@ -253,7 +256,7 @@ impl RawManifestTracker {
 
         self.raw_manifests
             .values()
-            .any(|status| status.load_state == LoadState::Failed)
+            .any(|status| matches!(status.load_state, LoadState::Failed(..)))
     }
 
     /// Returns the [`ProcessingStatus`] of the raw manifests.
@@ -336,7 +339,7 @@ pub fn process_manifest<M: Manifest>(
         return;
     };
     let typed_handle = status.handle.clone_weak().typed::<M::RawManifest>();
-    let maybe_raw_manifest = assets.remove(typed_handle);
+    let maybe_raw_manifest = assets.remove(&typed_handle);
 
     let raw_manifest = match maybe_raw_manifest {
         Some(raw_manifest) => raw_manifest,
