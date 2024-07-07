@@ -6,10 +6,12 @@
 //! As this example demonstrates, you can bypass the [`ManifestPlugin`](leafwing_manifest::plugin::ManifestPlugin) entirely, and load your assets however you like,
 //! calling the publicly exposed methods yourself to replicate the work it does.
 
+use std::future::Future;
+
 use bevy::{
     asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext, LoadState},
     prelude::*,
-    utils::BoxedFuture,
+    utils::ConditionalSendFuture,
 };
 use bevy_common_assets::ron::RonLoaderError;
 use leafwing_manifest::manifest::Manifest;
@@ -129,7 +131,9 @@ impl AssetLoader for ItemAssetLoader {
         reader: &'a mut Reader,
         _settings: &'a Self::Settings,
         _load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
+    ) -> impl ConditionalSendFuture
+           + Future<Output = Result<<Self as AssetLoader>::Asset, <Self as AssetLoader>::Error>>
+    {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
@@ -192,8 +196,8 @@ fn manage_manifests(
                 // We're still waiting for the asset to load
                 LoadState::NotLoaded | LoadState::Loading => (),
                 // Something went wrong: panic!
-                LoadState::Failed => {
-                    panic!("Failed to load manifest");
+                LoadState::Failed(err) => {
+                    panic!("Failed to load manifest: {}", err);
                 }
             }
         }
@@ -208,9 +212,8 @@ fn manage_manifests(
 
             // We're deferring the actual work with commands to avoid blocking the whole world
             // every time this system runs.
-            commands.add(|mut world: &mut World| {
-                let item_manifest =
-                    ItemManifest::from_raw_manifest(raw_manifest, &mut world).unwrap();
+            commands.add(|world: &mut World| {
+                let item_manifest = ItemManifest::from_raw_manifest(raw_manifest, world).unwrap();
 
                 world.insert_resource(item_manifest);
             });

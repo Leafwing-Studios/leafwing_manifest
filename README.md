@@ -1,4 +1,4 @@
-# leafwing_manifest
+# Leafwing Manifest
 
 `leafwing_manifest` is a straightforward, opinionated tool to transform "assets on disk" into flexible, robust objects inside of your Bevy game.
 There are four key concepts:
@@ -10,6 +10,13 @@ There are four key concepts:
 
 Data is deserialized from disk into a raw manifest, which is processed into a manifest which contains a list of all available game objects of a given class.
 That manifest is then used to spawn and look up the properties of specific kinds of game objects in your game code.
+
+## Bevy compatibility
+
+| `bevy` Version | `leafwing_manifest` Version |
+| -------------- | --------------------------- |
+| 0.13           | 0.1                         |
+| 0.14           | 0.2                         |
 
 ## Why manifests rock
 

@@ -1,10 +1,10 @@
-use bevy::ecs::schedule::States;
+use bevy::{prelude::States, state::state::FreelyMutableState};
 
 /// A trait that translates your custom [`States`] enum into the states required for asset loading.
 ///
 /// Note that you are not required to use this trait.
 /// Instead, you can add or emulate the required systems from [`ManifestPlugin`](crate::plugin::ManifestPlugin) manually to match your app logic.
-pub trait AssetLoadingState: States {
+pub trait AssetLoadingState: FreelyMutableState {
     /// Assets are currently being loaded.
     const LOADING: Self;
     /// Assets have been loaded successfully,
