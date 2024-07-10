@@ -36,9 +36,13 @@ pub struct ManifestPlugin<S: AssetLoadingState> {
     /// If you want to coordinate with other asset loading steps, you may want to set this to `false`
     /// and handle asset state management on your own.
     pub automatically_advance_states: bool,
-    /// The initial state that the plugin starts in. If [None], will not insert an initial state, which
-    /// allows you to enter the manifest loading state from other plugins or state transitions.
-    pub initial_state: Option<S>,
+    /// Whether the plugin should automatically transition to the initial loading state, as given by `S::LOADING`.
+    /// If false, the plugin will not load any manifests or perform any state transitions until you transition  to `S::LOADING` using the [`NextState`] resource.
+    ///
+    /// Defaults to `true`
+    pub set_initial_state: bool,
+    /// A phantom data field to satisfy the type system.
+    pub _phantom: std::marker::PhantomData<S>,
 }
 
 impl<S> Default for ManifestPlugin<S>
@@ -48,28 +52,18 @@ where
     fn default() -> Self {
         Self {
             automatically_advance_states: true,
-            initial_state: Some(S::LOADING),
+            set_initial_state: true,
+            _phantom: std::marker::PhantomData,
         }
-    }
-}
-
-impl<S> ManifestPlugin<S>
-where
-    S: AssetLoadingState,
-{
-    /// Prevents the plugin from setting an initial state, which will revert to
-    /// the default for that state, or whatever is set elsewhere within the application.
-    ///
-    /// This allows performing actions or other processing before transitioning to the
-    /// manifest loading state.
-    pub fn without_initial_state(mut self) -> Self {
-        self.initial_state = None;
-        self
     }
 }
 
 impl<S: AssetLoadingState> Plugin for ManifestPlugin<S> {
     fn build(&self, app: &mut App) {
+        if self.set_initial_state {
+            app.insert_state(S::LOADING);
+        }
+
         app.init_resource::<RawManifestTracker>()
             // Configure *all* manifest processing systems to run when the app is in the PROCESSING state.
             // See the `ProcessManifestSet` struct for more information.
@@ -77,11 +71,6 @@ impl<S: AssetLoadingState> Plugin for ManifestPlugin<S> {
                 PreUpdate,
                 ProcessManifestSet.run_if(in_state(S::PROCESSING)),
             );
-
-        if let Some(initial_state) = &self.initial_state {
-            info!("Setting initial state to {initial_state:?}");
-            app.insert_state(initial_state.clone());
-        }
 
         if self.automatically_advance_states {
             app.add_systems(
