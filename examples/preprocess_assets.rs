@@ -173,7 +173,7 @@ fn main() {
         // Coordinates asset loading and state transitions. Note the use of `without_initial_state`
         // so that `GameState::PreloadAssets` is the initial app state, rather than
         // `AssetLoadingState::LOADING`.
-        .add_plugins(ManifestPlugin::<GameState>::default().without_initial_state())
+        .add_plugins(ManifestPlugin::<GameState>::new(false))
         // Registers our item manifest, triggering it to be loaded when the app transitions
         // to `GameState::LoadManifests`.
         .register_manifest::<manifest_definition::ItemManifest>("raw_items.ron")
