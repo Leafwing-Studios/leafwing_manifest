@@ -1,6 +1,6 @@
 [package]
 name = "leafwing_manifest"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Leafwing Studios"]
 homepage = "https://leafwing-studios.com/"
 repository = "https://github.com/leafwing-studios/leafwing_manifest"
@@ -15,11 +15,11 @@ exclude = ["assets/**/*", "tools/**/*", ".github/**/*"]
 members = ["./", "tools/ci"]
 
 [dependencies]
-bevy = { version = "0.14", default-features = false, features = [
+bevy = { version = "0.15", default-features = false, features = [
     "bevy_asset",
     "bevy_state",
 ] }
-bevy_common_assets = { version = "0.11.0", default-features = false }
+bevy_common_assets = { version = "0.12.0", default-features = false }
 serde = "1.0.195"
 thiserror = "1.0.58"
 
@@ -62,7 +62,7 @@ ron = "0.8"
 # Enables non-default features for examples and tests.
 leafwing_manifest = { path = ".", features = ["ron"] }
 # Give us access to the full Bevy default features for examples.
-bevy = { version = "0.14" }
+bevy = { version = "0.15" }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

@@ -6,10 +6,8 @@
 //! As this example demonstrates, you can bypass the [`ManifestPlugin`](leafwing_manifest::plugin::ManifestPlugin) entirely, and load your assets however you like,
 //! calling the publicly exposed methods yourself to replicate the work it does.
 
-use std::future::Future;
-
 use bevy::{
-    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext, LoadState},
+    asset::{io::Reader, AssetLoader, LoadContext, LoadState},
     prelude::*,
     utils::ConditionalSendFuture,
 };
@@ -126,14 +124,14 @@ impl AssetLoader for ItemAssetLoader {
     type Settings = ();
     type Error = RonLoaderError;
 
-    fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader,
-        _settings: &'a Self::Settings,
-        _load_context: &'a mut LoadContext,
-    ) -> impl ConditionalSendFuture
-           + Future<Output = Result<<Self as AssetLoader>::Asset, <Self as AssetLoader>::Error>>
-    {
+    fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        _load_context: &mut LoadContext,
+    ) -> impl ConditionalSendFuture<
+        Output = Result<<Self as AssetLoader>::Asset, <Self as AssetLoader>::Error>,
+    > {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
@@ -212,7 +210,7 @@ fn manage_manifests(
 
             // We're deferring the actual work with commands to avoid blocking the whole world
             // every time this system runs.
-            commands.add(|world: &mut World| {
+            commands.queue(|world: &mut World| {
                 let item_manifest = ItemManifest::from_raw_manifest(raw_manifest, world).unwrap();
 
                 world.insert_resource(item_manifest);
