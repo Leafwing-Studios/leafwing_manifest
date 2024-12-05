@@ -11,7 +11,7 @@
 //! If you need to spawn a scene hierarchy (such as for levels or 3D models), storing a handle to that scene can work well,
 //! or a scene bundle can be added to your custom bundle type.
 
-use bevy::{prelude::*, sprite::Mesh2dHandle, utils::HashMap};
+use bevy::{prelude::*, utils::HashMap};
 use leafwing_manifest::{
     asset_state::SimpleAssetState,
     identifier::Id,
@@ -37,7 +37,7 @@ pub struct Tile {
     color_material: Handle<ColorMaterial>,
     // The same square mesh is used for all tiles,
     // and can be procedurally generated during .
-    mesh: Mesh2dHandle,
+    mesh: Mesh2d,
     tile_type: TileType,
 }
 
@@ -56,10 +56,10 @@ pub struct TileBundle {
     // It also serves as a nice way to filter for tiles in queries.
     id: Id<Tile>,
     tile_type: TileType,
-    material: Handle<ColorMaterial>,
-    mesh: Mesh2dHandle,
-    // Add all of the components needed to render the tile.
-    spatial_bundle: SpatialBundle,
+    material: MeshMaterial2d<ColorMaterial>,
+    mesh: Mesh2d,
+    transform: Transform,
+    visibility: Visibility,
 }
 
 impl TileBundle {
@@ -74,12 +74,13 @@ impl TileBundle {
             tile_type: tile.tile_type,
             // We can use weak clones here and save a tiny bit of work,
             // since the manifest will always store a canonical strong handle to the assets.
-            material: tile.color_material.clone_weak(),
+            material: tile.color_material.clone_weak().into(),
             // While the value of the mesh is the same for all tiles, passing around `&Assets<Mesh>` everywhere
             // is miserable. Instead, we sacrifice a little bit of memory to redundantly store the mesh handle in the manifest:
             // like always, the mesh itself is only stored once in the asset storage.
             mesh: tile.mesh.clone(),
-            spatial_bundle: SpatialBundle::from_transform(transform),
+            transform,
+            visibility: Visibility::Visible,
         }
     }
 }
@@ -113,7 +114,7 @@ impl Manifest for TileManifest {
         let mut meshes = world.resource_mut::<Assets<Mesh>>();
         let mesh = meshes.add(Mesh::from(Rectangle::new(1.0, 1.0)));
         // This is a thin wrapper around a `Handle<Mesh>`, used in 2D rendering.
-        let mesh_2d = Mesh2dHandle::from(mesh.clone());
+        let mesh_2d = Mesh2d::from(mesh.clone());
 
         let mut color_materials = world.resource_mut::<Assets<ColorMaterial>>();
 
@@ -151,8 +152,8 @@ pub fn spawn_tiles(mut commands: Commands, tile_manifest: Res<TileManifest>) {
 
     info!("Spawning tiles...");
 
-    // Remember to add the camera bundle to the world, or you won't see anything!
-    commands.spawn(Camera2dBundle::default());
+    // Remember to add the camera to the world, or you won't see anything!
+    commands.spawn(Camera2d::default());
 
     for (i, tile) in tile_manifest.tiles.values().enumerate() {
         info!("Spawning tile: {:?}", tile);
