@@ -15,11 +15,11 @@ exclude = ["assets/**/*", "tools/**/*", ".github/**/*"]
 members = ["./", "tools/ci"]
 
 [dependencies]
-bevy = { version = "0.14", default-features = false, features = [
+bevy = { version = "0.15", default-features = false, features = [
     "bevy_asset",
     "bevy_state",
 ] }
-bevy_common_assets = { version = "0.11.0", default-features = false }
+bevy_common_assets = { version = "0.12.0", default-features = false }
 serde = "1.0.195"
 thiserror = "1.0.58"
 

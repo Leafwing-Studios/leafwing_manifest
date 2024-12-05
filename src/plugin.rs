@@ -99,7 +99,7 @@ impl RegisterManifest for App {
             .add_systems(
                 Update,
                 report_failed_raw_manifest_loading::<M>
-                    .run_if(on_event::<AssetLoadFailedEvent<M::RawManifest>>()),
+                    .run_if(on_event::<AssetLoadFailedEvent<M::RawManifest>>),
             )
             .add_systems(
                 PreUpdate,
@@ -188,7 +188,7 @@ pub enum ProcessingStatus {
 }
 
 /// Information about the loading status of a raw manifest.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct RawManifestStatus {
     /// The path to the manifest file.
     pub path: PathBuf,
@@ -247,7 +247,7 @@ impl RawManifestTracker {
 
         self.raw_manifests
             .values()
-            .all(|status| status.load_state == LoadState::Loaded)
+            .all(|status| matches!(status.load_state, LoadState::Loaded))
     }
 
     /// Returns true if any registered raw manifests have failed to load.
