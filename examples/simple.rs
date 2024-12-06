@@ -71,7 +71,12 @@ fn main() {
     App::new()
         // leafwing_manifest requires `AssetPlugin`, and `StatesPlugin` to function
         // This is included in `DefaultPlugins`, but this example is very small, so it only uses the `MinimalPlugins`
-        .add_plugins((MinimalPlugins, AssetPlugin::default(), LogPlugin::default(), StatesPlugin))
+        .add_plugins((
+            MinimalPlugins,
+            AssetPlugin::default(),
+            LogPlugin::default(),
+            StatesPlugin,
+        ))
         // This is our simple state, used to navigate the asset loading process.
         .init_state::<SimpleAssetState>()
         // Coordinates asset loading and state transitions.
