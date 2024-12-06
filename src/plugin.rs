@@ -5,7 +5,7 @@ use bevy::app::{App, Plugin, PreUpdate, Update};
 use bevy::asset::{AssetApp, AssetLoadFailedEvent, AssetServer, Assets, LoadState, UntypedHandle};
 use bevy::ecs::prelude::*;
 use bevy::ecs::system::SystemState;
-use bevy::log::{error, error_once, info};
+use bevy::log::{debug, error, error_once, info};
 use bevy::state::app::AppExtStates;
 use bevy::state::condition::in_state;
 use bevy::state::state::NextState;
@@ -328,7 +328,7 @@ pub fn process_manifest<M: Manifest>(
     world: &mut World,
     system_state: &mut SystemState<(Res<RawManifestTracker>, ResMut<Assets<M::RawManifest>>)>,
 ) {
-    info!("Processing manifest of type {}.", type_name::<M>());
+    debug!("Processing manifest of type {}.", type_name::<M>());
 
     let (raw_manifest_tracker, mut assets) = system_state.get_mut(world);
     let Some(status) = raw_manifest_tracker.status::<M>() else {
