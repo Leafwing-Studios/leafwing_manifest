@@ -5,7 +5,7 @@ use bevy::app::{App, Plugin, PreUpdate, Update};
 use bevy::asset::{AssetApp, AssetLoadFailedEvent, AssetServer, Assets, LoadState, UntypedHandle};
 use bevy::ecs::prelude::*;
 use bevy::ecs::system::SystemState;
-use bevy::log::{error, error_once, info};
+use bevy::log::{debug, error, error_once, info};
 use bevy::state::app::AppExtStates;
 use bevy::state::condition::in_state;
 use bevy::state::state::NextState;
@@ -111,7 +111,7 @@ impl RegisterManifest for App {
             .add_systems(
                 Update,
                 report_failed_raw_manifest_loading::<M>
-                    .run_if(on_event::<AssetLoadFailedEvent<M::RawManifest>>()),
+                    .run_if(on_event::<AssetLoadFailedEvent<M::RawManifest>>),
             )
             .add_systems(
                 PreUpdate,
@@ -200,7 +200,7 @@ pub enum ProcessingStatus {
 }
 
 /// Information about the loading status of a raw manifest.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct RawManifestStatus {
     /// The path to the manifest file.
     pub path: PathBuf,
@@ -259,7 +259,7 @@ impl RawManifestTracker {
 
         self.raw_manifests
             .values()
-            .all(|status| status.load_state == LoadState::Loaded)
+            .all(|status| status.load_state.is_loaded())
     }
 
     /// Returns true if any registered raw manifests have failed to load.
@@ -268,7 +268,7 @@ impl RawManifestTracker {
 
         self.raw_manifests
             .values()
-            .any(|status| matches!(status.load_state, LoadState::Failed(..)))
+            .any(|status| status.load_state.is_failed())
     }
 
     /// Returns the [`ProcessingStatus`] of the raw manifests.
@@ -340,7 +340,7 @@ pub fn process_manifest<M: Manifest>(
     world: &mut World,
     system_state: &mut SystemState<(Res<RawManifestTracker>, ResMut<Assets<M::RawManifest>>)>,
 ) {
-    info!("Processing manifest of type {}.", type_name::<M>());
+    debug!("Processing manifest of type {}.", type_name::<M>());
 
     let (raw_manifest_tracker, mut assets) = system_state.get_mut(world);
     let Some(status) = raw_manifest_tracker.status::<M>() else {
