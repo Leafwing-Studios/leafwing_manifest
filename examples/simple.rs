@@ -6,7 +6,7 @@
 //! See the other examples for more advanced use cases!
 //! The `raw_manifest.rs` example is a good next step that builds upon this example.
 
-use bevy::{app::AppExit, log::LogPlugin, prelude::*, utils::HashMap};
+use bevy::{app::AppExit, log::LogPlugin, prelude::*, state::app::StatesPlugin, utils::HashMap};
 use leafwing_manifest::{
     asset_state::SimpleAssetState,
     identifier::Id,
@@ -69,9 +69,14 @@ impl Manifest for ItemManifest {
 
 fn main() {
     App::new()
-        // leafwing_manifest requires `AssetPlugin` to function
+        // leafwing_manifest requires `AssetPlugin`, and `StatesPlugin` to function
         // This is included in `DefaultPlugins`, but this example is very small, so it only uses the `MinimalPlugins`
-        .add_plugins((MinimalPlugins, AssetPlugin::default(), LogPlugin::default()))
+        .add_plugins((
+            MinimalPlugins,
+            AssetPlugin::default(),
+            LogPlugin::default(),
+            StatesPlugin,
+        ))
         // This is our simple state, used to navigate the asset loading process.
         .init_state::<SimpleAssetState>()
         // Coordinates asset loading and state transitions.
