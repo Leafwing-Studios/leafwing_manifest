@@ -11,7 +11,7 @@
 //! If you need to spawn a scene hierarchy (such as for levels or 3D models), storing a handle to that scene can work well,
 //! or a scene bundle can be added to your custom bundle type.
 
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{platform::collections::HashMap, prelude::*};
 use leafwing_manifest::{
     asset_state::SimpleAssetState,
     identifier::Id,

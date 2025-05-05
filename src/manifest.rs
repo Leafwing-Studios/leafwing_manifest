@@ -2,7 +2,7 @@ use std::{borrow::Borrow, error::Error};
 
 use bevy::{
     asset::Asset,
-    ecs::{system::Resource, world::World},
+    ecs::{prelude::Resource, world::World},
 };
 use serde::Deserialize;
 use thiserror::Error;

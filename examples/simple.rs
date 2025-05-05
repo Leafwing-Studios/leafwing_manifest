@@ -6,7 +6,10 @@
 //! See the other examples for more advanced use cases!
 //! The `raw_manifest.rs` example is a good next step that builds upon this example.
 
-use bevy::{app::AppExit, log::LogPlugin, prelude::*, state::app::StatesPlugin, utils::HashMap};
+use bevy::{
+    app::AppExit, log::LogPlugin, platform::collections::HashMap, prelude::*,
+    state::app::StatesPlugin,
+};
 use leafwing_manifest::{
     asset_state::SimpleAssetState,
     identifier::Id,
@@ -97,7 +100,7 @@ fn list_available_items(
     }
 
     // We are out of here
-    app_exit_events.send_default();
+    app_exit_events.write_default();
 }
 
 /// This module is used to generate the item manifest.

@@ -12,7 +12,7 @@
 //!
 //! This code is largely copied from the `simple.rs` example: we're just adding constants and a new system to demonstrate the name-based lookups.
 
-use bevy::{log::LogPlugin, prelude::*, state::app::StatesPlugin, utils::HashMap};
+use bevy::{log::LogPlugin, platform::collections::HashMap, prelude::*, state::app::StatesPlugin};
 use leafwing_manifest::{
     asset_state::SimpleAssetState,
     identifier::Id,
