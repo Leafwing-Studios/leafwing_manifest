@@ -13,7 +13,7 @@
 
 use std::path::PathBuf;
 
-use bevy::{app::AppExit, prelude::*, utils::HashMap};
+use bevy::{app::AppExit, platform::collections::HashMap, prelude::*};
 use leafwing_manifest::{
     asset_state::SimpleAssetState,
     identifier::Id,
@@ -149,7 +149,7 @@ fn list_available_items(
     }
 
     // We are out of here
-    app_exit_events.send_default();
+    app_exit_events.write_default();
 }
 
 /// This module is used to generate the item manifest.

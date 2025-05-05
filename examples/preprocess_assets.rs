@@ -14,7 +14,7 @@ use leafwing_manifest::{
 /// is in the `from_raw_manifest` implementation below which uses [LoadedAssets]
 /// to retrieve asset handles.
 pub mod manifest_definition {
-    use bevy::{prelude::*, utils::HashMap};
+    use bevy::{platform::collections::HashMap, prelude::*};
     use leafwing_manifest::{
         identifier::Id,
         manifest::{Manifest, ManifestFormat},
@@ -210,5 +210,5 @@ fn list_available_items(
     }
 
     // We are out of here
-    app_exit_events.send_default();
+    app_exit_events.write_default();
 }

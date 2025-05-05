@@ -9,7 +9,7 @@
 use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext, LoadState},
     prelude::*,
-    utils::ConditionalSendFuture,
+    tasks::ConditionalSendFuture,
 };
 use bevy_common_assets::ron::RonLoaderError;
 use leafwing_manifest::manifest::Manifest;
@@ -20,7 +20,7 @@ use manifest_definition::{ItemManifest, RawItemManifest};
 mod manifest_definition {
     use std::path::PathBuf;
 
-    use bevy::{prelude::*, utils::HashMap};
+    use bevy::{platform::collections::HashMap, prelude::*};
     use leafwing_manifest::{
         identifier::Id,
         manifest::{Manifest, ManifestFormat},
