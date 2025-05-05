@@ -5,7 +5,7 @@ use bevy::app::{App, Plugin, PreUpdate, Update};
 use bevy::asset::{AssetApp, AssetLoadFailedEvent, AssetServer, Assets, LoadState, UntypedHandle};
 use bevy::ecs::prelude::*;
 use bevy::ecs::system::SystemState;
-use bevy::log::{error, error_once, info};
+use bevy::log::{debug, error, error_once, info};
 use bevy::state::app::AppExtStates;
 use bevy::state::condition::in_state;
 use bevy::state::state::NextState;
@@ -36,14 +36,23 @@ pub struct ManifestPlugin<S: AssetLoadingState> {
     /// If you want to coordinate with other asset loading steps, you may want to set this to `false`
     /// and handle asset state management on your own.
     pub automatically_advance_states: bool,
+    /// Whether the plugin should automatically transition to the initial loading state, as given by `S::LOADING`.
+    /// If false, the plugin will not load any manifests or perform any state transitions until you transition  to `S::LOADING` using the [`NextState`] resource.
+    ///
+    /// Defaults to `true`
+    pub set_initial_state: bool,
     /// A phantom data field to satisfy the type system.
     pub _phantom: std::marker::PhantomData<S>,
 }
 
-impl Default for ManifestPlugin<crate::asset_state::SimpleAssetState> {
+impl<S> Default for ManifestPlugin<S>
+where
+    S: AssetLoadingState,
+{
     fn default() -> Self {
         Self {
             automatically_advance_states: true,
+            set_initial_state: true,
             _phantom: std::marker::PhantomData,
         }
     }
@@ -51,8 +60,11 @@ impl Default for ManifestPlugin<crate::asset_state::SimpleAssetState> {
 
 impl<S: AssetLoadingState> Plugin for ManifestPlugin<S> {
     fn build(&self, app: &mut App) {
-        app.insert_state(S::LOADING)
-            .init_resource::<RawManifestTracker>()
+        if self.set_initial_state {
+            app.insert_state(S::LOADING);
+        }
+
+        app.init_resource::<RawManifestTracker>()
             // Configure *all* manifest processing systems to run when the app is in the PROCESSING state.
             // See the `ProcessManifestSet` struct for more information.
             .configure_sets(
@@ -99,7 +111,7 @@ impl RegisterManifest for App {
             .add_systems(
                 Update,
                 report_failed_raw_manifest_loading::<M>
-                    .run_if(on_event::<AssetLoadFailedEvent<M::RawManifest>>()),
+                    .run_if(on_event::<AssetLoadFailedEvent<M::RawManifest>>),
             )
             .add_systems(
                 PreUpdate,
@@ -188,7 +200,7 @@ pub enum ProcessingStatus {
 }
 
 /// Information about the loading status of a raw manifest.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct RawManifestStatus {
     /// The path to the manifest file.
     pub path: PathBuf,
@@ -247,7 +259,7 @@ impl RawManifestTracker {
 
         self.raw_manifests
             .values()
-            .all(|status| status.load_state == LoadState::Loaded)
+            .all(|status| status.load_state.is_loaded())
     }
 
     /// Returns true if any registered raw manifests have failed to load.
@@ -256,7 +268,7 @@ impl RawManifestTracker {
 
         self.raw_manifests
             .values()
-            .any(|status| matches!(status.load_state, LoadState::Failed(..)))
+            .any(|status| status.load_state.is_failed())
     }
 
     /// Returns the [`ProcessingStatus`] of the raw manifests.
@@ -328,7 +340,7 @@ pub fn process_manifest<M: Manifest>(
     world: &mut World,
     system_state: &mut SystemState<(Res<RawManifestTracker>, ResMut<Assets<M::RawManifest>>)>,
 ) {
-    info!("Processing manifest of type {}.", type_name::<M>());
+    debug!("Processing manifest of type {}.", type_name::<M>());
 
     let (raw_manifest_tracker, mut assets) = system_state.get_mut(world);
     let Some(status) = raw_manifest_tracker.status::<M>() else {
