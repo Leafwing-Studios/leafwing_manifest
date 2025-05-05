@@ -15,7 +15,7 @@ exclude = ["assets/**/*", "tools/**/*", ".github/**/*"]
 members = ["./", "tools/ci"]
 
 [dependencies]
-bevy = { version = "0.15", default-features = false, features = [
+bevy = { version = "0.16", default-features = false, features = [
     "bevy_asset",
     "bevy_state",
 ] }
@@ -62,7 +62,7 @@ ron = "0.8"
 # Enables non-default features for examples and tests.
 leafwing_manifest = { path = ".", features = ["ron"] }
 # Give us access to the full Bevy default features for examples.
-bevy = { version = "0.15" }
+bevy = { version = "0.16" }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
