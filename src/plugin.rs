@@ -1,4 +1,4 @@
-use std::any::{type_name, TypeId};
+use std::any::TypeId;
 use std::path::PathBuf;
 
 use bevy::app::{App, Plugin, PreUpdate, Update};
@@ -340,13 +340,16 @@ pub fn process_manifest<M: Manifest>(
     world: &mut World,
     system_state: &mut SystemState<(Res<RawManifestTracker>, ResMut<Assets<M::RawManifest>>)>,
 ) {
-    debug!("Processing manifest of type {}.", type_name::<M>());
+    debug!(
+        "Processing manifest of type {}.",
+        core::any::type_name::<M>()
+    );
 
     let (raw_manifest_tracker, mut assets) = system_state.get_mut(world);
     let Some(status) = raw_manifest_tracker.status::<M>() else {
         error_once!(
             "The status of the raw manifest corresponding to the manifest type {} was not found.",
-            type_name::<M>()
+            core::any::type_name::<M>()
         );
         return;
     };
@@ -358,7 +361,7 @@ pub fn process_manifest<M: Manifest>(
         None => {
             error_once!(
                 "Failed to get raw manifest for manifest type {} from the asset server.",
-                type_name::<M>()
+                core::any::type_name::<M>()
             );
             return;
         }

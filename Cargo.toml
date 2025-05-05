@@ -17,6 +17,7 @@ members = ["./", "tools/ci"]
 [dependencies]
 bevy = { version = "0.16", default-features = false, features = [
     "bevy_asset",
+    "bevy_log",
     "bevy_state",
 ] }
 bevy_common_assets = { version = "0.13.0", default-features = false }
