@@ -6,10 +6,10 @@ use bevy::asset::{AssetApp, AssetLoadFailedEvent, AssetServer, Assets, LoadState
 use bevy::ecs::prelude::*;
 use bevy::ecs::system::SystemState;
 use bevy::log::{debug, error, error_once, info};
+use bevy::platform::collections::HashMap;
 use bevy::state::app::AppExtStates;
 use bevy::state::condition::in_state;
 use bevy::state::state::NextState;
-use bevy::utils::HashMap;
 
 use crate::asset_state::AssetLoadingState;
 use crate::manifest::Manifest;
@@ -25,7 +25,7 @@ use crate::manifest::Manifest;
 /// While [`register_manifest`](crate::plugin::RegisterManifest::register_manifest) must be called for each manifest type you wish to use,
 /// this plugin should only be added a single time.
 ///
-/// This plugin is intenionally optional: if you have more complex asset loading requirements, take a look at the systems in this plugin and either add or reimplement them as needed.
+/// This plugin is intentionally optional: if you have more complex asset loading requirements, take a look at the systems in this plugin and either add or reimplement them as needed.
 #[derive(Debug)]
 pub struct ManifestPlugin<S: AssetLoadingState> {
     /// If true, the app will automatically transition between asset loading states as manifests load.
