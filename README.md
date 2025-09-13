@@ -17,6 +17,8 @@ That manifest is then used to spawn and look up the properties of specific kinds
 | -------------- | --------------------------- |
 | 0.13           | 0.1                         |
 | 0.14           | 0.2                         |
+| 0.15           | 0.3                         |
+| 0.16           | 0.4                         |
 
 ## Why manifests rock
 
