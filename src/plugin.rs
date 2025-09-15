@@ -111,7 +111,7 @@ impl RegisterManifest for App {
             .add_systems(
                 Update,
                 report_failed_raw_manifest_loading::<M>
-                    .run_if(on_event::<AssetLoadFailedEvent<M::RawManifest>>),
+                    .run_if(on_message::<AssetLoadFailedEvent<M::RawManifest>>),
             )
             .add_systems(
                 PreUpdate,
@@ -321,7 +321,7 @@ pub fn check_if_manifests_are_processed<S: AssetLoadingState>(
 ///
 /// See [bevy#12667](https://github.com/bevyengine/bevy/issues/12667) for more information.0
 pub fn report_failed_raw_manifest_loading<M: Manifest>(
-    mut events: EventReader<AssetLoadFailedEvent<M::RawManifest>>,
+    mut events: MessageReader<AssetLoadFailedEvent<M::RawManifest>>,
 ) {
     for event in events.read() {
         error_once!(
@@ -353,7 +353,7 @@ pub fn process_manifest<M: Manifest>(
         );
         return;
     };
-    let typed_handle = status.handle.clone_weak().typed::<M::RawManifest>();
+    let typed_handle = status.handle.clone().typed::<M::RawManifest>();
     let maybe_raw_manifest = assets.remove(&typed_handle);
 
     let raw_manifest = match maybe_raw_manifest {

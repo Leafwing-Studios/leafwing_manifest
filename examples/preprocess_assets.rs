@@ -203,7 +203,7 @@ fn preload_assets(
 /// This system reads the generated item manifest resource and prints out all the items.
 fn list_available_items(
     item_manifest: Res<manifest_definition::ItemManifest>,
-    mut app_exit_events: EventWriter<AppExit>,
+    mut app_exit_events: MessageWriter<AppExit>,
 ) {
     for (id, item) in item_manifest.items.iter() {
         info!("{:?}: {:?}", id, item);

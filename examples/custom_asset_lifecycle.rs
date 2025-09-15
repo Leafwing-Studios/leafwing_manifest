@@ -6,12 +6,13 @@
 //! As this example demonstrates, you can bypass the [`ManifestPlugin`](leafwing_manifest::plugin::ManifestPlugin) entirely, and load your assets however you like,
 //! calling the publicly exposed methods yourself to replicate the work it does.
 
+use std::error::Error;
+
 use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext, LoadState},
     prelude::*,
     tasks::ConditionalSendFuture,
 };
-use bevy_common_assets::ron::RonLoaderError;
 use leafwing_manifest::manifest::Manifest;
 use manifest_definition::{ItemManifest, RawItemManifest};
 
@@ -122,7 +123,7 @@ struct ItemAssetLoader;
 impl AssetLoader for ItemAssetLoader {
     type Asset = RawItemManifest;
     type Settings = ();
-    type Error = RonLoaderError;
+    type Error = Box<dyn Error + Send + Sync + 'static>;
 
     fn load(
         &self,
