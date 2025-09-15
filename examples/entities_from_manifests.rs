@@ -72,9 +72,7 @@ impl TileBundle {
         Self {
             id: Id::from_name(&tile.name),
             tile_type: tile.tile_type,
-            // We can use weak clones here and save a tiny bit of work,
-            // since the manifest will always store a canonical strong handle to the assets.
-            material: MeshMaterial2d(tile.color_material.clone_weak()),
+            material: MeshMaterial2d(tile.color_material.clone()),
             // While the value of the mesh is the same for all tiles, passing around `&Assets<Mesh>` everywhere
             // is miserable. Instead, we sacrifice a little bit of memory to redundantly store the mesh handle in the manifest:
             // like always, the mesh itself is only stored once in the asset storage.
