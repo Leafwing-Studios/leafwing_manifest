@@ -353,7 +353,7 @@ pub fn process_manifest<M: Manifest>(
         );
         return;
     };
-    let typed_handle = status.handle.clone_weak().typed::<M::RawManifest>();
+    let typed_handle = status.handle.clone().typed::<M::RawManifest>();
     let maybe_raw_manifest = assets.remove(&typed_handle);
 
     let raw_manifest = match maybe_raw_manifest {
