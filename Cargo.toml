@@ -20,7 +20,7 @@ bevy = { version = "0.18.0-rc.2", default-features = false, features = [
     "bevy_log",
     "bevy_state",
 ] }
-bevy_common_assets = { version = "0.14.0-rc.1", default-features = false }
+bevy_common_assets = { version = "0.15.0-rc.1", default-features = false }
 serde = "1.0.195"
 thiserror = "1.0.58"
 
