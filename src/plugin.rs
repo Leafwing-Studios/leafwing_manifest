@@ -345,7 +345,7 @@ pub fn process_manifest<M: Manifest>(
         core::any::type_name::<M>()
     );
 
-    let (raw_manifest_tracker, mut assets) = system_state.get_mut(world);
+    let (raw_manifest_tracker, mut assets) = system_state.get_mut(world).unwrap();
     let Some(status) = raw_manifest_tracker.status::<M>() else {
         error_once!(
             "The status of the raw manifest corresponding to the manifest type {} was not found.",

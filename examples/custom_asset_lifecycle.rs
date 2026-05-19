@@ -118,6 +118,7 @@ fn main() {
 // Writing your own asset loaders is quite a bit of boilerplate:
 // you need a unique asset loader for each manifest type you want to load.
 // Many thanks to bevy_common_assets for showing us how to do this!
+#[derive(TypePath)]
 struct ItemAssetLoader;
 
 impl AssetLoader for ItemAssetLoader {
