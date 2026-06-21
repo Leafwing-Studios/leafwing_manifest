@@ -1,5 +1,13 @@
 # Release Notes
 
+## 0.7
+
+- Now supports Bevy 0.19
+
+## 0.6
+
+- Now supports Bevy 0.18
+
 ## 0.5
 
 - Now supports Bevy 0.17
