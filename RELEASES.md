@@ -4,6 +4,7 @@
 
 - To enable easier resolution of system ordering ambiguities:
   - the `ProcessManifestSet` is now public
+  - manifest processing now happens in the `ProcessManifest` schedule, which runs before `PreUpdate`
 
 ## 0.7
 

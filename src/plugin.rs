@@ -1,9 +1,10 @@
 use std::any::TypeId;
 use std::path::PathBuf;
 
-use bevy::app::{App, Plugin, PreUpdate, Update};
+use bevy::app::{App, MainScheduleOrder, Plugin, PreUpdate, Update};
 use bevy::asset::{AssetApp, AssetLoadFailedEvent, AssetServer, Assets, LoadState, UntypedHandle};
 use bevy::ecs::prelude::*;
+use bevy::ecs::schedule::ScheduleLabel;
 use bevy::ecs::system::SystemState;
 use bevy::log::{debug, error, error_once, info};
 use bevy::platform::collections::HashMap;
@@ -65,12 +66,21 @@ impl<S: AssetLoadingState> Plugin for ManifestPlugin<S> {
         }
 
         app.init_resource::<RawManifestTracker>()
+            .init_schedule(ProcessManifest)
             // Configure *all* manifest processing systems to run when the app is in the PROCESSING state.
             // See the `ProcessManifestSet` struct for more information.
             .configure_sets(
-                PreUpdate,
+                ProcessManifest,
                 ProcessManifestSet.run_if(in_state(S::PROCESSING)),
             );
+
+        // Process manifests in their own schedule, before `PreUpdate`.
+        // This keeps the resulting manifest resources available to all ordinary systems,
+        // while isolating the exclusive `process_manifest` systems so that they do not
+        // introduce system ordering ambiguities into `PreUpdate`.
+        app.world_mut()
+            .resource_mut::<MainScheduleOrder>()
+            .insert_before(PreUpdate, ProcessManifest);
 
         if self.automatically_advance_states {
             app.add_systems(
@@ -94,6 +104,18 @@ pub trait RegisterManifest {
     fn register_manifest<M: Manifest>(&mut self, path: impl Into<PathBuf>) -> &mut Self;
 }
 
+/// The schedule in which raw manifests are processed into their final form.
+///
+/// This schedule runs before [`PreUpdate`], so that the resulting manifest resources
+/// are available to all ordinary systems in [`PreUpdate`], [`Update`] and later schedules.
+///
+/// It exists as a separate schedule because [`process_manifest`] is an exclusive system.
+/// Exclusive systems act as hidden synchronization points and are difficult to order
+/// against other systems, so confining them to their own schedule keeps ordering unambiguous:
+/// any system that needs a manifest can simply run after this schedule.
+#[derive(ScheduleLabel, PartialEq, Eq, Hash, Debug, Clone)]
+pub struct ProcessManifest;
+
 /// A system set used to configure [`process_manifest`] systems,
 /// regardless of the manifest type being processed.
 ///
@@ -114,7 +136,7 @@ impl RegisterManifest for App {
                     .run_if(on_message::<AssetLoadFailedEvent<M::RawManifest>>),
             )
             .add_systems(
-                PreUpdate,
+                ProcessManifest,
                 process_manifest::<M>
                     .in_set(ProcessManifestSet)
                     .run_if(not(resource_exists::<M>)),

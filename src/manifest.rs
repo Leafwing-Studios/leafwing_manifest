@@ -77,7 +77,7 @@ pub trait Manifest: Sized + Resource {
     /// If you need access to data from *other* manifests, you can use the [`World`] to look them up as resources.
     /// This is useful for cross-referencing data between manifests.
     /// Use ordinary system ordering to ensure that the required manifests are loaded first:
-    /// the system that calls this method is [`process_manifest::<M>`](crate::plugin::process_manifest), run in the [`PreUpdate`](bevy::prelude::PreUpdate) schedule.
+    /// the system that calls this method is [`process_manifest::<M>`](crate::plugin::process_manifest), run in the [`ProcessManifest`](crate::plugin::ProcessManifest) schedule.
     ///
     /// This method is commonly implemented using the [`TryFrom`] trait between [`Self::RawItem`](Manifest::RawItem) and [`Self::Item`](Manifest::Item).
     /// By iterating over the items in the raw manifest, you can convert them into the final item type one at a time.
