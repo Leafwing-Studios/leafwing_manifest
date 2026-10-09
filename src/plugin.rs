@@ -100,7 +100,7 @@ pub trait RegisterManifest {
 /// This pattern is required as we do not have access to the app loading state in `register_manifest`,
 /// and adding an extra generic to it would be cumbersome.
 #[derive(SystemSet, PartialEq, Eq, Hash, Debug, Clone)]
-struct ProcessManifestSet;
+pub struct ProcessManifestSet;
 
 impl RegisterManifest for App {
     /// Registers the manifest `M`.

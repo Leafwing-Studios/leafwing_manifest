@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.8
+
+- To enable easier resolution of system ordering ambiguities:
+  - the `ProcessManifestSet` is now public
+
 ## 0.7
 
 - Now supports Bevy 0.19
