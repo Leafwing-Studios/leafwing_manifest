@@ -74,8 +74,3 @@ bevy = { version = "0.20.0", default-features = false, features = [
 unsafe_code = "forbid"
 missing_docs = "warn"
 type_complexity = "allow"
-bevy = { version = "0.20.0", default-features = false, features = [
-    "bevy_asset",
-    "bevy_log",
-    "bevy_state",
-] }
