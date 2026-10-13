@@ -22,7 +22,7 @@ bevy = { version = "0.20.0", default-features = false, features = [
 ] }
 bevy_common_assets = { version = "0.18", default-features = false }
 serde = "1.0.195"
-thiserror = "1.0.58"
+thiserror = "2.0.21"
 
 [features]
 # All file formats are disabled by default: you will typically want to enable
