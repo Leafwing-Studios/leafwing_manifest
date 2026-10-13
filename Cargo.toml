@@ -59,7 +59,7 @@ xml = ["bevy_common_assets/xml"]
 csv = ["bevy_common_assets/csv"]
 
 [dev-dependencies]
-ron = "0.8"
+ron = "0.12"
 # Enables non-default features for examples and tests.
 leafwing_manifest = { path = ".", features = ["ron"] }
 # Give us access to more Bevy features in examples.
